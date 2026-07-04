@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0" />
+<title>Infinite STEM Passwords - Gamified Edition</title>
+<style>
+  @keyframes fadeIn {from {opacity: 0;} to {opacity: 1;}}
+  @keyframes shake {
+    0%, 100% {transform: translateX(0);} 20%, 60% {transform: translateX(-8px);} 40%, 80% {transform: translateX(8px);}
+  }
+  @keyframes pulseGlow {
+    0%, 100% { box-shadow: 0 0 10px #38bdf8; }
+    50% { box-shadow: 0 0 25px #0ea5e9; }
+  }
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(120deg, #0f172a, #1e293b);
+    color: #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    margin: 0;
+    padding: 10px;
+  }
+  .app-container {
+    background: #1e293bcc;
+    padding: 30px 25px 40px 25px;
+    border-radius: 14px;
+    width: 100%;
+    max-width: 640px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.7);
+    position: relative;
+    animation: fadeIn 1s ease forwards;
+    display: flex;
+    flex-direction: column;
+  }
+  h1, h2 {
+    text-align: center;
+    font-weight: 900;
+    color: #38bdf8;
+    margin-bottom: 10px;
+    letter-spacing: 2px;
+    text-shadow: 0 0 8px #38bdf8;
+    user-select: none;
+  }
+  .input-section {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    margin: 25px auto;
+    max-width: 400px;
+  }
+  label {
+    font-weight: 700;
+    color: #38bdf8;
+    margin-bottom: 8px;
+  }
+  input[type=text], select {
+    background: #334155;
+    color: #f1f5f9;
+    font-size: 16px;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 12px;
+    cursor: pointer;
+    transition: box-shadow 0.3s ease;
+  }
+  input[type=text]:focus, select:focus {
+    outline: none;
+    box-shadow: 0 0 8px #38bdf8;
+  }
+  button {
+    margin-top: 20px;
+    padding: 14px 20px;
+    font-size: 18px;
+    border: none;
+    border-radius: 10px;
+    background: #38bdf8;
+    color: #0f172a;
+    font-weight: 900;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.3s ease, box-shadow 0.6s ease;
+    animation: pulseGlow 3.5s infinite;
+    max-width: 250px;
+    align-self: center;
+  }
+  button:hover:not(:disabled) {
+    background: #0ea5e9;
+    box-shadow: 0 0 15px #0ea5e9;
+    transform: scale(1.07);
+  }
+  button:disabled {
+    background: #64748b;
+    cursor: not-allowed;
+    animation: none;
+    box-shadow: none;
+    transform: none;
+  }
+  .question-section, .leaderboard-section {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+  }
+  .question-text {
+    font-size: 20px;
+    margin: 20px 0 15px 0;
+    min-height: 65px;
+    animation: fadeIn 0.5s ease forwards;
+    text-align: center;
+  }
+  .answer-input {
+    width: 100%;
+    max-width: 350px;
+    padding: 14px 14px;
+    border-radius: 10px;
+    border: none;
+    font-size: 18px;
+    box-sizing: border-box;
+    transition: box-shadow 0.3s ease;
+    font-weight: 600;
+  }
+  .feedback {
+    margin-top: 15px;
+    font-weight: 900;
+    font-size: 19px;
+    min-height: 40px;
+    user-select: none;
+    text-align: center;
+  }
+  .feedback.correct {
+    color: #a7f3d0;
+    text-shadow: 0 0 7px #22c55e;
+    animation: fadeIn 0.8s ease forwards;
+  }
+  .feedback.wrong {
+    color: #fecaca;
+    text-shadow: 0 0 6px #dc2626;
+    animation: fadeIn 0.8s ease forwards;
+  }
+  .score, .level, .badges {
+    margin-top: 18px;
+    color: #facc15;
+    font-size: 18px;
+    font-weight: 700;
+    text-align: center;
+    user-select: none;
+  }
+  .progress-bar-container {
+    background: #334155;
+    border-radius: 10px;
+    overflow: hidden;
+    height: 14px;
+    margin-top: 25px;
+    box-shadow: inset 0 0 5px #0f172a;
+    width: 100%;
+    max-width: 400px;
+  }
+  .progress-bar {
+    height: 100%;
+    background: #38bdf8;
+    width: 0%;
+    transition: width 0.6s ease;
+    border-radius: 10px;
+  }
+  .leaderboard-list {
+    list-style: none;
+    padding: 0;
+    max-height: 180px;
+    overflow-y: auto;
+    border: 1px solid #475569;
+    border-radius: 8px;
+    background: #1e293bcc;
+    width: 100%;
+    max-width: 400px;
+  }
+  .leaderboard-list li {
+    padding: 10px 12px;
+    border-bottom: 1px solid #334155;
+    font-weight: 600;
+    display: flex;
+    justify-content: space-between;
+  }
+  .leaderboard-list li:last-child {
+    border-bottom: none;
+  }
+</style>
+</head>
+<body>
+  <main class="app-container" role="main" aria-label="Infinite STEM Passwords Gamified Quiz Game">
+
+    <h1>Infinite STEM Passwords 🔑</h1>
+
+    <!-- Start Page: sequential inputs -->
+    <section id="startPage" class="input-section" aria-live="polite">
+      <div id="nameInputSection">
+        <label for="playerName">Enter your name:</label>
+        <input type="text" id="playerName" placeholder="Type your name here" autocomplete="off">
+        <script>
+    const playerNameInput = document.getElementById('playerName');
+    playerNameInput.addEventListener('input', () => {
+        if (playerNameInput.value.trim().length >= 2) {
+        // Show next section or enable next steps
+        } else {
+        // Hide or disable until conditions met
+        }
+  });
+        </script>
+      </div>
+
+      <div id="gradeInputSection" style="display:none;">
+        <label for="gradeSelect">Select Grade</label>
+        <select id="gradeSelect" aria-label="Select grade">
+          <option value="" disabled selected>Select Grade</option>
+          <option value="6">Grade 6</option>
+          <option value="7">Grade 7</option>
+          <option value="8">Grade 8</option>
+          <option value="9">Grade 9</option>
+          <option value="10">Grade 10</option>
+          <option value="11">Grade 11</option>
+          <option value="12">Grade 12</option>
+        </select>
+      </div>
+
+      <div id="subjectInputSection" style="display:none;">
+        <label for="subjectSelect">Select Subject</label>
+        <select id="subjectSelect" aria-label="Select STEM subject">
+          <option value="" disabled selected>Select Subject</option>
+          <option value="Science">Science</option>
+          <option value="Technology">Technology</option>
+          <option value="Engineering">Engineering</option>
+          <option value="Mathematics">Mathematics</option>
+        </select>
+      </div>
+
+      <button id="startGameBtn" disabled>Start Game</button>
+    </section>
+
+    <!-- Question Page -->
+    <section id="questionPage" class="question-section" aria-live="polite" aria-label="Quiz question section">
+      <div class="question-text" id="questionText">Question will appear here</div>
+      <input
+        type="text"
+        id="answerInput"
+        class="answer-input"
+        placeholder="Enter your answer..."
+        autocomplete="off"
+        spellcheck="false"
+        aria-describedby="feedbackText"
+      />
+      <button id="submitAnswerBtn" disabled>Submit Answer</button>
+
+      <div id="feedbackText" class="feedback" role="alert"></div>
+
+      <div class="score" id="scoreDisplay">Score: 0</div>
+      <div class="level" id="levelDisplay">Level: 1</div>
+      <div class="progress-bar-container" aria-label="Progress through questions">
+        <div class="progress-bar" id="progressBar"></div>
+      </div>
+    </section>
+
+    <!-- Leaderboard Page -->
+    <section id="leaderboardPage" class="leaderboard-section" aria-live="polite" aria-label="Leaderboard and end game">
+      <h2>Leaderboard 🏆</h2>
+      <ul class="leaderboard-list" id="leaderboardList"></ul>
+      <button id="endGameBtn" style="margin-top: 30px;">End & Return</button>
+    </section>
+  </main>
+
+<script>
+  const questionBank = [
+    // Science (Grade 6)
+    {q: "What are the three states of matter?", a: "Solid Liquid Gas", subject: "Science", gradeRange: [6, 6], difficulty: "Easy"},
+    {q: "Which part of the plant conducts photosynthesis?", a: "Leaf", subject: "Science", gradeRange: [6, 6], difficulty: "Easy"},
+    {q: "What gas do plants release during photosynthesis?", a: "Oxygen", subject: "Science", gradeRange: [6, 6], difficulty: "Easy"},
+    {q: "Water changes from liquid to gas by the process called?", a: "Evaporation", subject: "Science", gradeRange: [6, 6], difficulty: "Easy"},
+    {q: "What do we call animals that eat only plants?", a: "Herbivores", subject: "Science", gradeRange: [6, 6], difficulty: "Easy"},
+
+    // Mathematics (Grade 6)
+    {q: "What is the value of 7 x 8?", a: "56", subject: "Mathematics", gradeRange: [6, 6], difficulty: "Easy"},
+    {q: "How many degrees are in a right angle?", a: "90", subject: "Mathematics", gradeRange: [6, 6], difficulty: "Easy"},
+    {q: "What is the perimeter of a square with side 5 cm?", a: "20", subject: "Mathematics", gradeRange: [6, 6], difficulty: "Easy"},
+    {q: "If you have 3 apples and you get 2 more, how many apples do you have?", a: "5", subject: "Mathematics", gradeRange: [6, 6], difficulty: "Easy"},
+    {q: "Name the shape with four equal sides and four right angles.", a: "Square", subject: "Mathematics", gradeRange: [6, 6], difficulty: "Easy"},
+
+    // Technology (Grade 6)
+    {q: "What is the main device used to input data into a computer?", a: "Keyboard", subject: "Technology", gradeRange: [6, 6], difficulty: "Easy"},
+    {q: "What does CPU stand for?", a: "Central Processing Unit", subject: "Technology", gradeRange: [6, 6], difficulty: "Easy"},
+    {q: "Name the software to browse the internet.", a: "Web Browser", subject: "Technology", gradeRange: [6, 6], difficulty: "Easy"},
+    {q: "What is the file extension of a Microsoft Word document?", a: ".doc", subject: "Technology", gradeRange: [6, 6], difficulty: "Easy"},
+    {q: "What device lets you see images and text on the computer?", a: "Monitor", subject: "Technology", gradeRange: [6, 6], difficulty: "Easy"},
+
+    // Engineering (Grade 6)
+    {q: "What is a simple machine?", a: "A device that makes work easier", subject: "Engineering", gradeRange: [6, 6], difficulty: "Easy"},
+    {q: "Name any three simple machines.", a: "Lever Pulley Inclined Plane", subject: "Engineering", gradeRange: [6, 6], difficulty: "Easy"},
+    {q: "How many types of simple machines are there?", a: "Six", subject: "Engineering", gradeRange: [6, 6], difficulty: "Easy"},
+    {q: "Which simple machine is a ramp?", a: "Inclined Plane", subject: "Engineering", gradeRange: [6, 6], difficulty: "Easy"},
+    {q: "A seesaw is an example of which simple machine?", a: "Lever", subject: "Engineering", gradeRange: [6, 6], difficulty: "Easy"},
+    {q: "What simple machine is used in a flagpole to raise a flag?", a: "Pulley", subject: "Engineering", gradeRange: [6, 6], difficulty: "Easy"},
+    {q: "Which simple machine is a knife?", a: "Wedge", subject: "Engineering", gradeRange: [6, 6], difficulty: "Easy"},
+    {q: "A screwdriver is an example of which simple machine?", a: "Wheel and Axle", subject: "Engineering", gradeRange: [6, 6], difficulty: "Easy"},
+    {q: "A bottle cap is an example of which simple machine?", a: "Screw", subject: "Engineering", gradeRange: [6, 6], difficulty: "Easy"},
+    {q: "What is the main function of a simple machine?", a: "To make work easier", subject: "Engineering", gradeRange: [6, 6], difficulty: "Easy"},
+    {q: "Which simple machine helps to split or cut things?", a: "Wedge", subject: "Engineering", gradeRange: [6, 6], difficulty: "Easy"},
+    {q: "Which simple machine helps to lift heavy objects with less effort?", a: "Lever", subject: "Engineering", gradeRange: [6, 6], difficulty: "Easy"},
+    {q: "What simple machine is used in a bicycle?", a: "Wheel and Axle", subject: "Engineering", gradeRange: [6, 6], difficulty: "Easy"},
+    {q: "Which simple machine is used to hold things together?", a: "Screw", subject: "Engineering", gradeRange: [6, 6], difficulty: "Easy"},
+
+    // Grade 7 Science
+    {q: "What is the process by which plants make their own food?", a: "Photosynthesis", subject: "Science", gradeRange: [7,7], difficulty: "Easy"},
+    {q: "Which organ helps in digestion of food in humans?", a: "Stomach", subject: "Science", gradeRange: [7,7], difficulty: "Easy"},
+    {q: "What instrument is used to measure temperature?", a: "Thermometer", subject: "Science", gradeRange: [7,7], difficulty: "Easy"},
+    {q: "What is the taste of acids?", a: "Sour", subject: "Science", gradeRange: [7,7], difficulty: "Easy"},
+    {q: "What change occurs when paper burns?", a: "Chemical change", subject: "Science", gradeRange: [7,7], difficulty: "Medium"},
+    {q: "Which animal is adapted to live in deserts?", a: "Camel", subject: "Science", gradeRange: [7,7], difficulty: "Easy"},
+    {q: "What gas do humans inhale during respiration?", a: "Oxygen", subject: "Science", gradeRange: [7,7], difficulty: "Easy"},
+    {q: "What tissue transports water in plants?", a: "Xylem", subject: "Science", gradeRange: [7,7], difficulty: "Medium"},
+    {q: "What part of the plant produces seeds?", a: "Flower", subject: "Science", gradeRange: [7,7], difficulty: "Easy"},
+    {q: "What is the SI unit of time?", a: "Second", subject: "Science", gradeRange: [7,7], difficulty: "Easy"},
+
+    // Grade 7 Mathematics
+    {q: "What is 1/2 + 1/4?", a: "3/4", subject: "Mathematics", gradeRange: [7,7], difficulty: "Easy"},
+    {q: "What is 0.5 + 0.25?", a: "0.75", subject: "Mathematics", gradeRange: [7,7], difficulty: "Easy"},
+    {q: "Solve for x: x + 5 = 12", a: "7", subject: "Mathematics", gradeRange: [7,7], difficulty: "Easy"},
+    {q: "How many degrees in a straight angle?", a: "180", subject: "Mathematics", gradeRange: [7,7], difficulty: "Easy"},
+    {q: "What is the sum of angles in a triangle?", a: "180", subject: "Mathematics", gradeRange: [7,7], difficulty: "Easy"},
+    {q: "What is the area of a rectangle with length 8 and width 5?", a: "40", subject: "Mathematics", gradeRange: [7,7], difficulty: "Medium"},
+    {q: "What is a bar graph used for?", a: "To compare data", subject: "Mathematics", gradeRange: [7,7], difficulty: "Easy"},
+    {q: "Is -3 a rational number?", a: "Yes", subject: "Mathematics", gradeRange: [7,7], difficulty: "Easy"},
+    {q: "What is 2^3?", a: "8", subject: "Mathematics", gradeRange: [7,7], difficulty: "Easy"},
+    {q: "What is 20% of 150?", a: "30", subject: "Mathematics", gradeRange: [7,7], difficulty: "Medium"},
+
+    // Grade 7 Technology
+    {q: "What does CPU stand for?", a: "Central Processing Unit", subject: "Technology", gradeRange: [7,7], difficulty: "Easy"},
+    {q: "What device connects a computer to the internet?", a: "Modem", subject: "Technology", gradeRange: [7,7], difficulty: "Easy"},
+    {q: "What is an example of application software?", a: "MS Word", subject: "Technology", gradeRange: [7,7], difficulty: "Easy"},
+    {q: "Which device stores data permanently?", a: "Hard Disk", subject: "Technology", gradeRange: [7,7], difficulty: "Easy"},
+    {q: "What does the '@' symbol in an email address mean?", a: "At", subject: "Technology", gradeRange: [7,7], difficulty: "Easy"},
+    {q: "Which website is popular for learning block coding?", a: "Scratch", subject: "Technology", gradeRange: [7,7], difficulty: "Medium"},
+    {q: "What is a robot?", a: "A programmable machine", subject: "Technology", gradeRange: [7,7], difficulty: "Medium"},
+    {q: "Which software is used for making presentations?", a: "PowerPoint", subject: "Technology", gradeRange: [7,7], difficulty: "Easy"},
+    {q: "Which software is used for calculations and tables?", a: "Excel", subject: "Technology", gradeRange: [7,7], difficulty: "Easy"},
+    {q: "What should you not share online?", a: "Password", subject: "Technology", gradeRange: [7,7], difficulty: "Easy"},
+
+    // Grade 7 Engineering
+    {q: "What is the first step in the engineering design process?", a: "Identify the problem", subject: "Engineering", gradeRange: [7,7], difficulty: "Easy"},
+    {q: "Name a renewable energy source.", a: "Solar energy", subject: "Engineering", gradeRange: [7,7], difficulty: "Easy"},
+    {q: "What shape is strongest for building bridges?", a: "Triangle", subject: "Engineering", gradeRange: [7,7], difficulty: "Medium"},
+    {q: "What material is commonly used for electrical wires?", a: "Copper", subject: "Engineering", gradeRange: [7,7], difficulty: "Easy"},
+    {q: "What simple machine is a ramp?", a: "Inclined plane", subject: "Engineering", gradeRange: [7,7], difficulty: "Easy"},
+    {q: "What is a prototype?", a: "A model for testing", subject: "Engineering", gradeRange: [7,7], difficulty: "Medium"},
+    {q: "What tool measures length?", a: "Ruler", subject: "Engineering", gradeRange: [7,7], difficulty: "Easy"},
+    {q: "Why is safety important in engineering?", a: "To prevent accidents", subject: "Engineering", gradeRange: [7,7], difficulty: "Easy"},
+    {q: "What does CAD stand for?", a: "Computer-Aided Design", subject: "Engineering", gradeRange: [7,7], difficulty: "Medium"},
+    {q: "What force pushes a rocket upwards?", a: "Thrust", subject: "Engineering", gradeRange: [7,7], difficulty: "Medium"},
+    
+    // Grade 8 Science
+    {q: "What is the process by which plants make their own food?", a: "Photosynthesis", subject: "Science", gradeRange: [8,8], difficulty: "Easy"},
+    {q: "Which organ pumps blood throughout the human body?", a: "Heart", subject: "Science", gradeRange: [8,8], difficulty: "Easy"},
+    {q: "What is the boiling point of water in degree Celsius?", a: "100", subject: "Science", gradeRange: [8,8], difficulty: "Easy"},
+    {q: "Which gas do humans inhale to survive?", a: "Oxygen", subject: "Science", gradeRange: [8,8], difficulty: "Easy"},
+    {q: "Name the device used for measuring temperature.", a: "Thermometer", subject: "Science", gradeRange: [8,8], difficulty: "Easy"},
+    {q: "What force pulls objects toward the Earth?", a: "Gravity", subject: "Science", gradeRange: [8,8], difficulty: "Easy"},
+    {q: "What is the basic unit of life?", a: "Cell", subject: "Science", gradeRange: [8,8], difficulty: "Easy"},
+    {q: "What is evaporation?", a: "Process of liquid turning into vapor", subject: "Science", gradeRange: [8,8], difficulty: "Easy"},
+    {q: "Name the planet known as the Red Planet.", a: "Mars", subject: "Science", gradeRange: [8,8], difficulty: "Easy"},
+    {q: "What type of simple machine is a seesaw?", a: "Lever", subject: "Science", gradeRange: [8,8], difficulty: "Easy"},
+
+    // Grade 8 Mathematics
+    {q: "What is the value of π (pi) approximately?", a: "3.14", subject: "Mathematics", gradeRange: [8,8], difficulty: "Easy"},
+    {q: "What is the sum of interior angles of a triangle?", a: "180", subject: "Mathematics", gradeRange: [8,8], difficulty: "Easy"},
+    {q: "How many sides does a hexagon have?", a: "6", subject: "Mathematics", gradeRange: [8,8], difficulty: "Easy"},
+    {q: "What is the square root of 64?", a: "8", subject: "Mathematics", gradeRange: [8,8], difficulty: "Easy"},
+    {q: "What is the perimeter formula for a rectangle?", a: "2*(length + breadth)", subject: "Mathematics", gradeRange: [8,8], difficulty: "Easy"},
+    {q: "If x + 3 = 7, what is the value of x?", a: "4", subject: "Mathematics", gradeRange: [8,8], difficulty: "Easy"},
+    {q: "What kind of angle measures exactly 90 degrees?", a: "Right angle", subject: "Mathematics", gradeRange: [8,8], difficulty: "Easy"},
+    {q: "A triangle with all sides equal is called?", a: "Equilateral triangle", subject: "Mathematics", gradeRange: [8,8], difficulty: "Easy"},
+    {q: "What is the formula for area of a circle?", a: "πr^2", subject: "Mathematics", gradeRange: [8,8], difficulty: "Easy"},
+    {q: "What is 15% of 200?", a: "30", subject: "Mathematics", gradeRange: [8,8], difficulty: "Easy"},
+
+    // Grade 8 Technology
+    {q: "What does 'URL' stand for?", a: "Uniform Resource Locator", subject: "Technology", gradeRange: [8,8], difficulty: "Easy"},
+    {q: "Which device is used to store large amounts of data permanently?", a: "Hard Disk", subject: "Technology", gradeRange: [8,8], difficulty: "Easy"},
+    {q: "What is the main function of a spreadsheet?", a: "Organize and calculate data", subject: "Technology", gradeRange: [8,8], difficulty: "Easy"},
+    {q: "Which language is commonly used for web development?", a: "HTML", subject: "Technology", gradeRange: [8,8], difficulty: "Easy"},
+    {q: "What is a robot?", a: "A programmable machine", subject: "Technology", gradeRange: [8,8], difficulty: "Easy"},
+    {q: "What is the shortcut for copying text in most computers?", a: "Ctrl+C", subject: "Technology", gradeRange: [8,8], difficulty: "Easy"},
+    {q: "What is the full form of 'www'?", a: "World Wide Web", subject: "Technology", gradeRange: [8,8], difficulty: "Easy"},
+    {q: "What is a database?", a: "A collection of organized data", subject: "Technology", gradeRange: [8,8], difficulty: "Medium"},
+    {q: "What is the function of an operating system?", a: "Manages computer hardware and software", subject: "Technology", gradeRange: [8,8], difficulty: "Medium"},
+    {q: "What is a spreadsheet used for?", a: "Organizing and analyzing data", subject: "Technology", gradeRange: [8,8], difficulty: "Easy"},
+
+
+    // Grade 8 Engineering
+    {q: "What is the first step in the engineering design process?", a: "Identify the problem", subject: "Engineering", gradeRange: [8,8], difficulty: "Easy"},
+    {q: "What is a prototype?", a: "A model for testing ideas", subject: "Engineering", gradeRange: [8,8], difficulty: "Easy"},
+    {q: "What is the purpose of gears in machines?", a: "To transmit motion and force", subject: "Engineering", gradeRange: [8,8], difficulty: "Medium"},
+    {q: "What is a lever?", a: "A simple machine to lift objects", subject: "Engineering", gradeRange: [8,8], difficulty: "Easy"},
+    {q: "What is the function of a sensor in robotics?", a: "To detect changes in the environment", subject: "Engineering", gradeRange: [8,8], difficulty: "Medium"},
+    {q: "What is the use of a pulley?", a: "To lift heavy loads with less effort", subject: "Engineering", gradeRange: [8,8], difficulty: "Easy"},
+    {q: "What is tensile strength?", a: "Resistance to being pulled apart", subject: "Engineering", gradeRange: [8,8], difficulty: "Medium"},
+    {q: "What is the main purpose of a blueprint?", a: "To provide a detailed plan for construction", subject: "Engineering", gradeRange: [8,8], difficulty: "Medium"},
+    {q: "What is a circuit?", a: "A closed path for electric current", subject: "Engineering", gradeRange: [8,8], difficulty: "Easy"},
+    {q: "What is the function of a bridge in engineering?", a: "To span a gap and support loads", subject: "Engineering", gradeRange: [8,8], difficulty: "Medium"},
+
+
+
+    // Grade 9 Science
+    {q: "What is the formula for velocity?", a: "Distance divided by time", subject: "Science", gradeRange: [9,9], difficulty: "Medium"},
+    {q: "What type of energy does a stretched bow have?", a: "Potential energy", subject: "Science", gradeRange: [9,9], difficulty: "Medium"},
+    {q: "Which element is represented by the symbol 'O'?", a: "Oxygen", subject: "Science", gradeRange: [9,9], difficulty: "Easy"},
+    {q: "What kind of charge does an electron carry?", a: "Negative", subject: "Science", gradeRange: [9,9], difficulty: "Medium"},
+    {q: "Which device is used to measure electric current?", a: "Ammeter", subject: "Science", gradeRange: [9,9], difficulty: "Medium"},
+    {q: "What is the unit of force?", a: "Newton", subject: "Science", gradeRange: [9,9], difficulty: "Easy"},
+    {q: "What is refraction of light?", a: "Bending of light when it passes from one medium to another", subject: "Science", gradeRange: [9,9], difficulty: "Medium"},
+    {q: "What gas is produced by photosynthesis?", a: "Oxygen", subject: "Science", gradeRange: [9,9], difficulty: "Easy"},
+    {q: "What is an acid?", a: "A substance with pH less than 7", subject: "Science", gradeRange: [9,9], difficulty: "Medium"},
+    {q: "What is the process of converting liquid water into vapor called?", a: "Evaporation", subject: "Science", gradeRange: [9,9], difficulty: "Easy"},
+
+    // Grade 9 Mathematics
+    {q: "What is the quadratic formula?", a: "(-b ± √(b²-4ac)) / 2a", subject: "Mathematics", gradeRange: [9,9], difficulty: "Hard"},
+    {q: "What is the area of a rectangle with length 5 and breadth 3?", a: "15", subject: "Mathematics", gradeRange: [9,9], difficulty: "Easy"},
+    {q: "If p=5 and q=3, what is p^2 - q^2?", a: "16", subject: "Mathematics", gradeRange: [9,9], difficulty: "Medium"},
+    {q: "What is the value of sin 90°?", a: "1", subject: "Mathematics", gradeRange: [9,9], difficulty: "Easy"},
+    {q: "Define an isosceles triangle.", a: "Triangle with two equal sides", subject: "Mathematics", gradeRange: [9,9], difficulty: "Easy"},
+    {q: "What is the circumference of a circle with radius 7?", a: "44", subject: "Mathematics", gradeRange: [9,9], difficulty: "Medium"},
+    {q: "How many degrees are in a full circle?", a: "360", subject: "Mathematics", gradeRange: [9,9], difficulty: "Easy"},
+    {q: "What is the median of the data set 3, 5, 7, 9, 11?", a: "7", subject: "Mathematics", gradeRange: [9,9], difficulty: "Easy"},
+    {q: "What is the sum of the angles in a quadrilateral?", a: "360", subject: "Mathematics", gradeRange: [9,9], difficulty: "Easy"},
+    {q: "What do you call a number divisible by 2?", a: "Even number", subject: "Mathematics", gradeRange: [9,9], difficulty: "Easy"},
+
+    // Grade 9 Technology
+    {q: "What is the function of an operating system?", a: "Manages computer hardware and software", subject: "Technology", gradeRange: [9,9], difficulty: "Medium"},
+    {q: "What is the shortcut for copying text in most computers?", a: "Ctrl+C", subject: "Technology", gradeRange: [9,9], difficulty: "Easy"},
+    {q: "What is a spreadsheet used for?", a: "Organizing and analyzing data", subject: "Technology", gradeRange: [9,9], difficulty: "Easy"},
+    {q: "What is the full form of 'www'?", a: "World Wide Web", subject: "Technology", gradeRange: [9,9], difficulty: "Easy"},
+    {q: "What is a database?", a: "A collection of organized data", subject: "Technology", gradeRange: [9,9], difficulty: "Medium"},
+    {q: "What is the main function of a spreadsheet?", a: "Organize and calculate data", subject: "Technology", gradeRange: [9,9], difficulty: "Easy"},
+    {q: "Which device is used to store large amounts of data permanently?", a: "Hard Disk", subject: "Technology", gradeRange: [9,9], difficulty: "Easy"},
+    {q: "What does 'URL' stand for?", a: "Uniform Resource Locator", subject: "Technology", gradeRange: [9,9], difficulty: "Easy"},
+    {q: "Which language is commonly used for web development?", a: "HTML", subject: "Technology", gradeRange: [9,9], difficulty: "Easy"},
+    {q: "What is a robot?", a: "A programmable machine", subject: "Technology", gradeRange: [9,9], difficulty: "Easy"},
+
+    // Grade 9 Engineering
+    {q: "What is the function of a bridge in engineering?", a: "To span a gap and support loads", subject: "Engineering", gradeRange: [9,9], difficulty: "Medium"},
+    {q: "What is a circuit?", a: "A closed path for electric current", subject: "Engineering", gradeRange: [9,9], difficulty: "Easy"},
+    {q: "What is the main purpose of a blueprint?", a: "To provide a detailed plan for construction", subject: "Engineering", gradeRange: [9,9], difficulty: "Medium"},
+    {q: "What is tensile strength?", a: "Resistance to being pulled apart", subject: "Engineering", gradeRange: [9,9], difficulty: "Medium"},
+    {q: "What is the use of a pulley?", a: "To lift heavy loads with less effort", subject: "Engineering", gradeRange: [9,9], difficulty: "Easy"},
+    {q: "What is the purpose of gears in machines?", a: "To transmit motion and force", subject: "Engineering", gradeRange: [9,9], difficulty: "Medium"},
+    {q: "What is the function of a sensor in robotics?", a: "To detect changes in the environment", subject: "Engineering", gradeRange: [9,9], difficulty: "Medium"},
+    {q: "What is the first step in the engineering design process?", a: "Identify the problem", subject: "Engineering", gradeRange: [9,9], difficulty: "Easy"},
+    {q: "What is a prototype?", a: "A model for testing ideas", subject: "Engineering", gradeRange: [9,9], difficulty: "Easy"},
+    {q: "What is the main function of a simple machine?", a: "To make work easier", subject: "Engineering", gradeRange: [9,9], difficulty: "Easy"},
+
+    // Grade 10 Science
+    {q: "What is the chemical formula for table salt?", a: "NaCl", subject: "Science", gradeRange: [10,10], difficulty: "Easy"},
+    {q: "What is the process by which green plants make food?", a: "Photosynthesis", subject: "Science", gradeRange: [10,10], difficulty: "Easy"},
+    {q: "What is Newton's third law of motion?", a: "Every action has an equal and opposite reaction", subject: "Science", gradeRange: [10,10], difficulty: "Medium"},
+    {q: "What is the pH value of pure water?", a: "7", subject: "Science", gradeRange: [10,10], difficulty: "Easy"},
+    {q: "What is the main function of red blood cells?", a: "Transport oxygen", subject: "Science", gradeRange: [10,10], difficulty: "Easy"},
+    {q: "What is the SI unit of electric current?", a: "Ampere", subject: "Science", gradeRange: [10,10], difficulty: "Easy"},
+    {q: "What is the process of conversion of a solid directly into gas?", a: "Sublimation", subject: "Science", gradeRange: [10,10], difficulty: "Medium"},
+    {q: "What is the function of stomata in plants?", a: "Gas exchange", subject: "Science", gradeRange: [10,10], difficulty: "Medium"},
+    {q: "What is the law of conservation of mass?", a: "Mass is neither created nor destroyed", subject: "Science", gradeRange: [10,10], difficulty: "Medium"},
+    {q: "What is the boiling point of water in Celsius?", a: "100", subject: "Science", gradeRange: [10,10], difficulty: "Easy"},
+
+    // Grade 10 Mathematics
+    {q: "What is the quadratic formula?", a: "(-b ± √(b²-4ac)) / 2a", subject: "Mathematics", gradeRange: [10,10], difficulty: "Medium"},
+    {q: "What is the value of sin 90°?", a: "1", subject: "Mathematics", gradeRange: [10,10], difficulty: "Easy"},
+    {q: "What is the sum of the angles in a triangle?", a: "180", subject: "Mathematics", gradeRange: [10,10], difficulty: "Easy"},
+    {q: "What is the formula for the area of a circle?", a: "πr²", subject: "Mathematics", gradeRange: [10,10], difficulty: "Easy"},
+    {q: "What is the slope of a line parallel to the x-axis?", a: "0", subject: "Mathematics", gradeRange: [10,10], difficulty: "Medium"},
+    {q: "What is the probability of getting a head in a fair coin toss?", a: "0.5", subject: "Mathematics", gradeRange: [10,10], difficulty: "Easy"},
+    {q: "What is the value of 2³?", a: "8", subject: "Mathematics", gradeRange: [10,10], difficulty: "Easy"},
+    {q: "What is the distance formula between two points (x₁, y₁) and (x₂, y₂)?", a: "√[(x₂-x₁)² + (y₂-y₁)²]", subject: "Mathematics", gradeRange: [10,10], difficulty: "Medium"},
+    {q: "What is the standard deviation a measure of?", a: "Spread of data", subject: "Mathematics", gradeRange: [10,10], difficulty: "Medium"},
+    {q: "What is the value of π (pi) to two decimal places?", a: "3.14", subject: "Mathematics", gradeRange: [10,10], difficulty: "Easy"},
+
+    // Grade 10 Technology
+    {q: "What does CPU stand for?", a: "Central Processing Unit", subject: "Technology", gradeRange: [10,10], difficulty: "Easy"},
+    {q: "What is the main function of an operating system?", a: "Manage hardware and software resources", subject: "Technology", gradeRange: [10,10], difficulty: "Medium"},
+    {q: "What is the binary representation of the decimal number 5?", a: "101", subject: "Technology", gradeRange: [10,10], difficulty: "Easy"},
+    {q: "What is the full form of HTML?", a: "HyperText Markup Language", subject: "Technology", gradeRange: [10,10], difficulty: "Easy"},
+    {q: "What is a spreadsheet used for?", a: "Organizing and calculating data", subject: "Technology", gradeRange: [10,10], difficulty: "Easy"},
+    {q: "What is the function of a modem?", a: "Connects computer to the internet", subject: "Technology", gradeRange: [10,10], difficulty: "Medium"},
+    {q: "What is a database?", a: "Organized collection of data", subject: "Technology", gradeRange: [10,10], difficulty: "Medium"},
+    {q: "What is the purpose of antivirus software?", a: "Protects against malware", subject: "Technology", gradeRange: [10,10], difficulty: "Medium"},
+    {q: "What is the shortcut to copy in most computer programs?", a: "Ctrl+C", subject: "Technology", gradeRange: [10,10], difficulty: "Easy"},
+    {q: "What is cloud computing?", a: "Using remote servers to store and process data", subject: "Technology", gradeRange: [10,10], difficulty: "Medium"},
+
+    // Grade 10 Engineering
+    {q: "What is the first step in the engineering design process?", a: "Identify the problem", subject: "Engineering", gradeRange: [10,10], difficulty: "Easy"},
+    {q: "What is a prototype?", a: "A model for testing", subject: "Engineering", gradeRange: [10,10], difficulty: "Easy"},
+    {q: "What is the function of a gear?", a: "Transmit motion and force", subject: "Engineering", gradeRange: [10,10], difficulty: "Medium"},
+    {q: "What is tensile strength?", a: "Resistance to being pulled apart", subject: "Engineering", gradeRange: [10,10], difficulty: "Medium"},
+    {q: "What is the SI unit of pressure?", a: "Pascal", subject: "Engineering", gradeRange: [10,10], difficulty: "Easy"},
+    {q: "What is CAD used for?", a: "Computer-Aided Design", subject: "Engineering", gradeRange: [10,10], difficulty: "Medium"},
+    {q: "What is a circuit?", a: "Path for electric current", subject: "Engineering", gradeRange: [10,10], difficulty: "Easy"},
+    {q: "What is the function of a lever?", a: "To lift or move objects", subject: "Engineering", gradeRange: [10,10], difficulty: "Easy"},
+    {q: "What is renewable energy?", a: "Energy from sources that are naturally replenished", subject: "Engineering", gradeRange: [10,10], difficulty: "Medium"},
+    {q: "What is the main material used in electrical wiring?", a: "Copper", subject: "Engineering", gradeRange: [10,10], difficulty: "Easy"},
+
+    // Grade 11 Science
+    {q: "What is the chemical formula for glucose?", a: "C6H12O6", subject: "Science", gradeRange: [11,11], difficulty: "Easy"},
+    {q: "What is the process of cell division in somatic cells?", a: "Mitosis", subject: "Science", gradeRange: [11,11], difficulty: "Medium"},
+    {q: "What is the law of independent assortment?", a: "Genes for different traits are inherited independently", subject: "Science", gradeRange: [11,11], difficulty: "Medium"},
+    {q: "What is the SI unit of frequency?", a: "Hertz", subject: "Science", gradeRange: [11,11], difficulty: "Easy"},
+    {q: "What is the function of mitochondria?", a: "Powerhouse of the cell", subject: "Science", gradeRange: [11,11], difficulty: "Easy"},
+    {q: "What is the difference between speed and velocity?", a: "Velocity has direction, speed does not", subject: "Science", gradeRange: [11,11], difficulty: "Medium"},
+    {q: "What is the process of osmosis?", a: "Movement of water across a semipermeable membrane", subject: "Science", gradeRange: [11,11], difficulty: "Medium"},
+    {q: "What is the function of enzymes?", a: "Speed up chemical reactions", subject: "Science", gradeRange: [11,11], difficulty: "Medium"},
+    {q: "What is the main component of natural gas?", a: "Methane", subject: "Science", gradeRange: [11,11], difficulty: "Easy"},
+    {q: "What is the function of chlorophyll?", a: "Absorbs light for photosynthesis", subject: "Science", gradeRange: [11,11], difficulty: "Easy"},
+
+    // Grade 11 Mathematics
+    {q: "What is the derivative of x²?", a: "2x", subject: "Mathematics", gradeRange: [11,11], difficulty: "Medium"},
+    {q: "What is the integral of 1/x dx?", a: "ln(x)", subject: "Mathematics", gradeRange: [11,11], difficulty: "Medium"},
+    {q: "What is the value of cos 0°?", a: "1", subject: "Mathematics", gradeRange: [11,11], difficulty: "Easy"},
+    {q: "What is the formula for the area under a curve?", a: "Definite integral", subject: "Mathematics", gradeRange: [11,11], difficulty: "Medium"},
+    {q: "What is a matrix?", a: "Rectangular array of numbers", subject: "Mathematics", gradeRange: [11,11], difficulty: "Easy"},
+    {q: "What is the solution to the equation x² = 9?", a: "x = 3 or x = -3", subject: "Mathematics", gradeRange: [11,11], difficulty: "Easy"},
+    {q: "What is the binomial theorem?", a: "(a+b)^n expansion", subject: "Mathematics", gradeRange: [11,11], difficulty: "Medium"},
+    {q: "What is the value of e (Euler's number) to two decimal places?", a: "2.72", subject: "Mathematics", gradeRange: [11,11], difficulty: "Easy"},
+    {q: "What is the formula for the sum of an arithmetic series?", a: "n/2 [2a + (n-1)d]", subject: "Mathematics", gradeRange: [11,11], difficulty: "Medium"},
+    {q: "What is the standard deviation of a set of identical numbers?", a: "0", subject: "Mathematics", gradeRange: [11,11], difficulty: "Medium"},
+
+    // Grade 11 Technology
+    {q: "What is the full form of URL?", a: "Uniform Resource Locator", subject: "Technology", gradeRange: [11,11], difficulty: "Easy"},
+    {q: "What is the function of a compiler?", a: "Converts source code to machine code", subject: "Technology", gradeRange: [11,11], difficulty: "Medium"},
+    {q: "What is the main function of RAM?", a: "Temporary data storage", subject: "Technology", gradeRange: [11,11], difficulty: "Easy"},
+    {q: "What is the difference between hardware and software?", a: "Hardware is physical, software is programs", subject: "Technology", gradeRange: [11,11], difficulty: "Easy"},
+    {q: "What is the function of a router?", a: "Directs data packets in a network", subject: "Technology", gradeRange: [11,11], difficulty: "Medium"},
+    {q: "What is open-source software?", a: "Software with source code available to all", subject: "Technology", gradeRange: [11,11], difficulty: "Medium"},
+    {q: "What is the purpose of encryption?", a: "Protects data from unauthorized access", subject: "Technology", gradeRange: [11,11], difficulty: "Medium"},
+    {q: "What is the function of a microprocessor?", a: "Processes instructions", subject: "Technology", gradeRange: [11,11], difficulty: "Medium"},
+    {q: "What is the full form of IoT?", a: "Internet of Things", subject: "Technology", gradeRange: [11,11], difficulty: "Easy"},
+    {q: "What is a flowchart used for?", a: "Visual representation of a process", subject: "Technology", gradeRange: [11,11], difficulty: "Easy"},
+
+    // Grade 11 Engineering
+    {q: "What is the function of a resistor in a circuit?", a: "Limits current", subject: "Engineering", gradeRange: [11,11], difficulty: "Medium"},
+    {q: "What is the principle of a hydraulic lift?", a: "Pascal's law", subject: "Engineering", gradeRange: [11,11], difficulty: "Medium"},
+    {q: "What is the function of a bridge rectifier?", a: "Converts AC to DC", subject: "Engineering", gradeRange: [11,11], difficulty: "Medium"},
+    {q: "What is the main material used in construction of bridges?", a: "Steel", subject: "Engineering", gradeRange: [11,11], difficulty: "Easy"},
+    {q: "What is the function of a transformer?", a: "Changes voltage", subject: "Engineering", gradeRange: [11,11], difficulty: "Medium"},
+    {q: "What is the process of soldering?", a: "Joining metals using a filler", subject: "Engineering", gradeRange: [11,11], difficulty: "Medium"},
+    {q: "What is the function of a pulley?", a: "Changes direction of force", subject: "Engineering", gradeRange: [11,11], difficulty: "Easy"},
+    {q: "What is the principle of a heat engine?", a: "Converts heat to work", subject: "Engineering", gradeRange: [11,11], difficulty: "Medium"},
+    {q: "What is the function of a capacitor?", a: "Stores electrical energy", subject: "Engineering", gradeRange: [11,11], difficulty: "Medium"},
+    {q: "What is the main function of bearings?", a: "Reduce friction", subject: "Engineering", gradeRange: [11,11], difficulty: "Easy"},
+
+    // Grade 12 Science
+    {q: "What is the process of DNA replication?", a: "Copying DNA", subject: "Science", gradeRange: [12,12], difficulty: "Medium"},
+    {q: "What is the function of hemoglobin?", a: "Carry oxygen in blood", subject: "Science", gradeRange: [12,12], difficulty: "Easy"},
+    {q: "What is the law of conservation of energy?", a: "Energy cannot be created or destroyed", subject: "Science", gradeRange: [12,12], difficulty: "Medium"},
+    {q: "What is the SI unit of magnetic field?", a: "Tesla", subject: "Science", gradeRange: [12,12], difficulty: "Easy"},
+    {q: "What is the function of the nephron?", a: "Filtration in kidney", subject: "Science", gradeRange: [12,12], difficulty: "Medium"},
+    {q: "What is the process of fermentation?", a: "Conversion of sugar to alcohol", subject: "Science", gradeRange: [12,12], difficulty: "Medium"},
+    {q: "What is the main function of the pancreas?", a: "Produces insulin", subject: "Science", gradeRange: [12,12], difficulty: "Easy"},
+    {q: "What is the difference between covalent and ionic bonds?", a: "Covalent shares electrons, ionic transfers", subject: "Science", gradeRange: [12,12], difficulty: "Medium"},
+    {q: "What is the function of ribosomes?", a: "Protein synthesis", subject: "Science", gradeRange: [12,12], difficulty: "Medium"},
+    {q: "What is the main component of limestone?", a: "Calcium carbonate", subject: "Science", gradeRange: [12,12], difficulty: "Easy"},
+
+    // Grade 12 Mathematics
+    {q: "What is the derivative of sin(x)?", a: "cos(x)", subject: "Mathematics", gradeRange: [12,12], difficulty: "Medium"},
+    {q: "What is the integral of e^x dx?", a: "e^x + C", subject: "Mathematics", gradeRange: [12,12], difficulty: "Medium"},
+    {q: "What is the value of tan 45°?", a: "1", subject: "Mathematics", gradeRange: [12,12], difficulty: "Easy"},
+    {q: "What is the formula for the volume of a sphere?", a: "(4/3)πr³", subject: "Mathematics", gradeRange: [12,12], difficulty: "Medium"},
+    {q: "What is the solution to the equation log(x) = 2?", a: "x = 100", subject: "Mathematics", gradeRange: [12,12], difficulty: "Medium"},
+    {q: "What is the formula for the sum of a geometric series?", a: "a(1-r^n)/(1-r)", subject: "Mathematics", gradeRange: [12,12], difficulty: "Medium"},
+    {q: "What is the value of lim(x→0) sin(x)/x?", a: "1", subject: "Mathematics", gradeRange: [12,12], difficulty: "Hard"},
+    {q: "What is the formula for the area of a triangle?", a: "(1/2)base*height", subject: "Mathematics", gradeRange: [12,12], difficulty: "Easy"},
+    {q: "What is the value of √144?", a: "12", subject: "Mathematics", gradeRange: [12,12], difficulty: "Easy"},
+    {q: "What is the formula for the distance between two points in 3D?", a: "√[(x₂-x₁)² + (y₂-y₁)² + (z₂-z₁)²]", subject: "Mathematics", gradeRange: [12,12], difficulty: "Medium"},
+
+    // Grade 12 Technology
+    {q: "What is the full form of API?", a: "Application Programming Interface", subject: "Technology", gradeRange: [12,12], difficulty: "Easy"},
+    {q: "What is the function of a database management system?", a: "Organizes and manages data", subject: "Technology", gradeRange: [12,12], difficulty: "Medium"},
+    {q: "What is the main function of an operating system kernel?", a: "Manages system resources", subject: "Technology", gradeRange: [12,12], difficulty: "Medium"},
+    {q: "What is the difference between LAN and WAN?", a: "LAN is local, WAN is wide area", subject: "Technology", gradeRange: [12,12], difficulty: "Easy"},
+    {q: "What is the function of a firewall?", a: "Protects network from unauthorized access", subject: "Technology", gradeRange: [12,12], difficulty: "Medium"},
+    {q: "What is the purpose of version control?", a: "Tracks changes in code", subject: "Technology", gradeRange: [12,12], difficulty: "Medium"},
+    {q: "What is the function of a server?", a: "Provides services to other computers", subject: "Technology", gradeRange: [12,12], difficulty: "Medium"},
+    {q: "What is the full form of GUI?", a: "Graphical User Interface", subject: "Technology", gradeRange: [12,12], difficulty: "Easy"},
+    {q: "What is the function of a cache?", a: "Stores frequently used data", subject: "Technology", gradeRange: [12,12], difficulty: "Medium"},
+    {q: "What is the main function of a network switch?", a: "Connects devices in a network", subject: "Technology", gradeRange: [12,12], difficulty: "Medium"},
+
+    // Grade 12 Engineering
+    {q: "What is the function of a diode?", a: "Allows current in one direction", subject: "Engineering", gradeRange: [12,12], difficulty: "Medium"},
+    {q: "What is the principle of electromagnetic induction?", a: "Generation of EMF by changing magnetic field", subject: "Engineering", gradeRange: [12,12], difficulty: "Medium"},
+    {q: "What is the function of a heat exchanger?", a: "Transfers heat between fluids", subject: "Engineering", gradeRange: [12,12], difficulty: "Medium"},
+    {q: "What is the main material used in aircraft construction?", a: "Aluminum", subject: "Engineering", gradeRange: [12,12], difficulty: "Easy"},
+    {q: "What is the function of a camshaft in an engine?", a: "Controls valve timing", subject: "Engineering", gradeRange: [12,12], difficulty: "Medium"},
+    {q: "What is the process of annealing?", a: "Heating and cooling to soften metal", subject: "Engineering", gradeRange: [12,12], difficulty: "Medium"},
+    {q: "What is the function of a flywheel?", a: "Stores rotational energy", subject: "Engineering", gradeRange: [12,12], difficulty: "Medium"},
+    {q: "What is the principle of a solar cell?", a: "Converts light to electricity", subject: "Engineering", gradeRange: [12,12], difficulty: "Medium"},
+    {q: "What is the function of a relay?", a: "Electrically operated switch", subject: "Engineering", gradeRange: [12,12], difficulty: "Medium"},
+    {q: "What is the main function of lubricants?", a: "Reduce friction", subject: "Engineering", gradeRange: [12,12], difficulty: "Easy"}
+
+  ];
+
+  const playerNameInput = document.getElementById("playerName");
+  const gradeSelect = document.getElementById("gradeSelect");
+  const subjectSelect = document.getElementById("subjectSelect");
+  const startGameBtn = document.getElementById("startGameBtn");
+
+  const startPage = document.getElementById("startPage");
+  const questionPage = document.getElementById("questionPage");
+  const leaderboardPage = document.getElementById("leaderboardPage");
+
+  const nameInputSection = document.getElementById("nameInputSection");
+  const gradeInputSection = document.getElementById("gradeInputSection");
+  const subjectInputSection = document.getElementById("subjectInputSection");
+
+  const questionText = document.getElementById("questionText");
+  const answerInput = document.getElementById("answerInput");
+  const submitAnswerBtn = document.getElementById("submitAnswerBtn");
+  const feedbackText = document.getElementById("feedbackText");
+  const scoreDisplay = document.getElementById("scoreDisplay");
+  const levelDisplay = document.getElementById("levelDisplay");
+  const progressBar = document.getElementById("progressBar");
+
+  const leaderboardList = document.getElementById("leaderboardList");
+  const endGameBtn = document.getElementById("endGameBtn");
+
+  let playerName = "";
+  let selectedGrade = null;
+  let selectedSubject = "";
+  let filteredQuestions = [];
+  let currentQuestionIndex = 0;
+  let score = 0;
+
+  // Show grade after valid name input
+  playerNameInput.addEventListener("input", () => {
+    if (playerNameInput.value.trim().length >= 2) {
+      gradeInputSection.style.display = "block";
+      gradeSelect.focus();
+    } else {
+      gradeInputSection.style.display = "none";
+      subjectInputSection.style.display = "none";
+      startGameBtn.disabled = true;
+    }
+  });
+
+  // Show subject after valid grade selection
+  gradeSelect.addEventListener("change", () => {
+    if (gradeSelect.value) {
+      subjectInputSection.style.display = "block";
+      subjectSelect.focus();
+    } else {
+      subjectInputSection.style.display = "none";
+      startGameBtn.disabled = true;
+    }
+  });
+
+  // Enable start button after valid subject selection
+  subjectSelect.addEventListener("change", () => {
+    if (subjectSelect.value) {
+      startGameBtn.disabled = false;
+    } else {
+      startGameBtn.disabled = true;
+    }
+  });
+
+  // Utility to shuffle array randomly
+  function shuffleArray(arr) {
+    for(let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+  }
+
+  // Filter and shuffle questions for the game
+  function filterQuestionsForGame() {
+    const grade = parseInt(selectedGrade);
+    filteredQuestions = questionBank.filter(q =>
+      grade === 6
+        ? q.gradeRange[0] === 6 && q.gradeRange[1] === 6 && q.subject === selectedSubject && q.difficulty === "Easy"
+        : grade >= q.gradeRange[0] && grade <= q.gradeRange[1] && q.subject === selectedSubject && q.difficulty === "Easy"
+    );
+    shuffleArray(filteredQuestions);
+    filteredQuestions = filteredQuestions.slice(0, 10);
+  }
+
+  // Show current question and reset feedback/input/button states
+  function showCurrentQuestion() {
+    const q = filteredQuestions[currentQuestionIndex];
+    questionText.textContent = q.q;
+    answerInput.value = "";
+    feedbackText.textContent = "";
+    answerInput.disabled = false;
+    submitAnswerBtn.disabled = true;
+    progressBar.style.width = ((currentQuestionIndex) / 10) * 100 + "%";
+    answerInput.focus();
+  }
+
+  // Validate answer and handle scoring and feedback
+  function checkAnswer() {
+    const userAns = answerInput.value.trim().toLowerCase().replace(/\s+/g, '');
+    const correctAns = filteredQuestions[currentQuestionIndex].a.trim().toLowerCase().replace(/\s+/g, '');
+    answerInput.disabled = true;
+    submitAnswerBtn.disabled = true;
+
+    if (userAns === correctAns) {
+      score++;
+      feedbackText.className = "feedback correct";
+      feedbackText.textContent = "✅ Correct!";
+    } else {
+      feedbackText.className = "feedback wrong";
+      feedbackText.textContent = `❌ Wrong! Correct answer: ${filteredQuestions[currentQuestionIndex].a}`;
+    }
+    scoreDisplay.textContent = `Score: ${score}`;
+
+    setTimeout(() => {
+      currentQuestionIndex++;
+      if (currentQuestionIndex < filteredQuestions.length) {
+        showCurrentQuestion();
+      } else {
+        showLeaderboardPage();
+      }
+    }, 1500);
+  }
+
+  // Show leaderboard and update with new score
+  function showLeaderboardPage() {
+    questionPage.style.display = "none";
+    leaderboardPage.style.display = "flex";
+    progressBar.style.width = "100%";
+    updateLeaderboard();
+  }
+
+  // Save and display leaderboard top 10
+  function updateLeaderboard() {
+    if (!playerName) return;
+    const leaderboard = JSON.parse(localStorage.getItem("stemLeaderboard") || "[]");
+    leaderboard.push({name: playerName, score});
+    leaderboard.sort((a,b) => b.score - a.score);
+    if(leaderboard.length > 10) leaderboard.length = 10;
+    localStorage.setItem("stemLeaderboard", JSON.stringify(leaderboard));
+    leaderboardList.innerHTML = '';
+    leaderboard.forEach(entry => {
+      const li = document.createElement("li");
+      li.innerHTML = `<span>${entry.name}</span><span>${entry.score}</span>`;
+      leaderboardList.appendChild(li);
+    });
+  }
+
+  // Reset app to start page and clear states
+  function resetToStart() {
+    leaderboardPage.style.display = "none";
+    startPage.style.display = "flex";
+    playerNameInput.value = "";
+    gradeSelect.value = "";
+    subjectSelect.value = "";
+    gradeInputSection.style.display = "none";
+    subjectInputSection.style.display = "none";
+    startGameBtn.disabled = true;
+    playerNameInput.focus();
+
+    playerName = "";
+    selectedGrade = null;
+    selectedSubject = "";
+    filteredQuestions = [];
+    currentQuestionIndex = 0;
+    score = 0;
+    scoreDisplay.textContent = "Score: 0";
+    levelDisplay.textContent = "Level: 1";
+    feedbackText.textContent = "";
+    progressBar.style.width = "0%";
+  }
+
+  // Handle Start Game button
+  startGameBtn.addEventListener("click", () => {
+    playerName = playerNameInput.value.trim();
+    selectedGrade = gradeSelect.value;
+    selectedSubject = subjectSelect.value;
+
+    filterQuestionsForGame();
+
+    if (filteredQuestions.length === 0) {
+      alert("No questions available for this selection. Please choose different options.");
+      return;
+    }
+
+    startPage.style.display = "none";
+    questionPage.style.display = "flex";
+
+    currentQuestionIndex = 0;
+    score = 0;
+    scoreDisplay.textContent = "Score: 0";
+    levelDisplay.textContent = "Level: 1";
+    progressBar.style.width = "0%";
+    feedbackText.textContent = "";
+
+    showCurrentQuestion();
+  });
+
+  // Enable Submit Answer button only if input not empty
+  answerInput.addEventListener("input", () => {
+    submitAnswerBtn.disabled = answerInput.value.trim() === "";
+  });
+
+  submitAnswerBtn.addEventListener("click", checkAnswer);
+
+  answerInput.addEventListener("keypress", (e) => {
+    if (e.key === "Enter" && !submitAnswerBtn.disabled) {
+      checkAnswer();
+    }
+  });
+
+  endGameBtn.addEventListener("click", resetToStart);
+
+  playerNameInput.focus();
+</script>
+</body>
+</html>

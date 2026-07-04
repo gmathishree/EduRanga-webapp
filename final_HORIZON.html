@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EduRanga — Multi-User Demo</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
+  body {
+    font-family: 'Roboto', sans-serif;
+    margin:0;
+    padding:0;
+    background: linear-gradient(120deg,#84fab0,#8fd3f4);
+    color:#1e293b;
+  }
+  .container {
+    max-width:900px;
+    margin:40px auto;
+    background:#fff;
+    padding:30px 40px;
+    border-radius:15px;
+    box-shadow:0 10px 25px rgba(0,0,0,0.15);
+  }
+  h1,h2,h3 {
+    text-align:center;
+    margin-bottom:20px;
+    font-weight:700;
+    color:#1e3a8a;
+  }
+  .hidden { display:none; }
+  button {
+    padding:12px 25px;
+    margin:5px;
+    cursor:pointer;
+    border:none;
+    border-radius:8px;
+    background:linear-gradient(45deg,#3b82f6,#06b6d4);
+    color:#fff;
+    font-size:16px;
+    font-weight:600;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  button:hover {
+    transform: translateY(-3px);
+    box-shadow:0 8px 15px rgba(0,0,0,0.2);
+  }
+  input {
+    width:100%;
+    padding:12px;
+    margin:10px 0;
+    border-radius:8px;
+    border:1px solid #ccc;
+    font-size:16px;
+    outline:none;
+    transition:border 0.2s;
+  }
+  input:focus {
+    border:2px solid #3b82f6;
+  }
+  table {
+    width:100%;
+    border-collapse:collapse;
+    margin-top:20px;
+    box-shadow:0 5px 15px rgba(0,0,0,0.1);
+  }
+  th,td {
+    padding:12px;
+    border:1px solid #ddd;
+    text-align:center;
+    font-weight:500;
+  }
+  th {
+    background: #3b82f6;
+    color:#fff;
+  }
+  tr:nth-child(even){
+    background:#f3f4f6;
+  }
+  .badge {
+    padding:6px 12px;
+    border-radius:12px;
+    color:#fff;
+    font-weight:600;
+    font-size:14px;
+  }
+  .gold { background:#f59e0b; }
+  .silver { background:#9ca3af; }
+  .bronze { background:#6b7280; }
+  .dashboard-card {
+    background: linear-gradient(135deg,#fef3c7,#fbcfe8);
+    padding:20px;
+    border-radius:12px;
+    margin:15px 0;
+    text-align:center;
+    box-shadow:0 6px 20px rgba(0,0,0,0.1);
+    transition: transform 0.2s;
+  }
+  .dashboard-card:hover {
+    transform: translateY(-5px);
+  }
+  a {
+    color:#3b82f6;
+    text-decoration:none;
+    font-weight:600;
+  }
+  a:hover { text-decoration:underline; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- LANDING PAGE -->
+  <div id="landingPage">
+    <h1>Welcome to EduRanga</h1>
+    <h3>Select User Type</h3>
+    <div class="dashboard-card">
+      <button onclick="selectUserType('student')">Student</button>
+    </div>
+    <div class="dashboard-card">
+      <button onclick="selectUserType('teacher')">Teacher</button>
+    </div>
+  </div>
+
+  <!-- STUDENT AUTH PAGE -->
+  <div id="studentAuthPage" class="hidden">
+    <h2 id="authTitle">Student Registration</h2>
+    <input type="text" id="displayName" placeholder="Display Name" />
+    <input type="text" id="username" placeholder="Username" />
+    <input type="password" id="password" placeholder="Password" />
+    <button id="authButton" onclick="registerStudent()">Register</button>
+    <p id="switchAuth">Already have an account? <a href="#" onclick="switchToLogin()">Login</a></p>
+  </div>
+
+  <!-- STUDENT DASHBOARD -->
+  <div id="studentDashboard" class="hidden">
+    <h2>Welcome, <span id="studentDisplayName"></span></h2>
+    <h3>Select a Game</h3>
+    <div class="dashboard-card"><button onclick="startGame('fill_the_formula')">FILL IN THE FORMULA</button></div>
+    <div class="dashboard-card"><button onclick="startGame('hangman')">HANGMAN GAME</button></div>
+    <div class="dashboard-card"><button onclick="startGame('infinity')">INFINITY STEM</button></div>
+    <div class="dashboard-card"><button onclick="startGame('board_quiz')">SNAKE AND LADDER QUIZ</button></div>
+    <div class="dashboard-card"><button onclick="logout()">Logout</button></div>
+  </div>
+
+  <!-- TEACHER AUTH PAGE -->
+  <div id="teacherAuthPage" class="hidden">
+    <h2>Teacher Login</h2>
+    <input type="text" id="teacherUsername" placeholder="Username" />
+    <input type="password" id="teacherPassword" placeholder="Password" />
+    <button onclick="loginTeacher()">Login</button>
+    <p>Default teacher account: <strong>admin / admin123</strong></p>
+  </div>
+
+  <!-- TEACHER DASHBOARD -->
+  <div id="teacherDashboard" class="hidden">
+    <h2>Teacher Dashboard</h2>
+    <h3>All Students' Performance</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Student</th>
+          <th>Game</th>
+          <th>Score</th>
+          <th>Badge</th>
+          <th>Suggestion</th>
+        </tr>
+      </thead>
+      <tbody id="teacherLeaderboardBody"></tbody>
+    </table>
+    <div class="dashboard-card"><button onclick="logout()">Logout</button></div>
+  </div>
+
+  <!-- STUDENT LEADERBOARD -->
+  <div id="leaderboardPage" class="hidden">
+    <h2>Leaderboard</h2>
+    <p>Player: <span id="leaderboardUser"></span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Game</th>
+          <th>Score</th>
+          <th>Badge</th>
+          <th>Suggestion</th>
+        </tr>
+      </thead>
+      <tbody id="leaderboardBody"></tbody>
+    </table>
+    <div class="dashboard-card">
+      <button onclick="backToDashboard()">Back to Dashboard</button>
+      <button onclick="logout()">Logout</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+let currentUserType = '';
+let currentStudent = null;
+let currentGame = '';
+
+// LANDING PAGE
+function selectUserType(type){
+  currentUserType = type;
+  document.getElementById('landingPage').classList.add('hidden');
+  if(type === 'student'){
+    document.getElementById('studentAuthPage').classList.remove('hidden');
+    document.getElementById('authTitle').innerText = 'Student Registration';
+    document.getElementById('authButton').innerText = 'Register';
+  } else {
+    document.getElementById('teacherAuthPage').classList.remove('hidden');
+  }
+}
+
+// STUDENT AUTH
+function switchToLogin(){
+  document.getElementById('authTitle').innerText = 'Student Login';
+  document.getElementById('authButton').innerText = 'Login';
+  document.getElementById('switchAuth').innerHTML = `Don't have an account? <a href="#" onclick="switchToRegister()">Register</a>`;
+}
+function switchToRegister(){
+  document.getElementById('authTitle').innerText = 'Student Registration';
+  document.getElementById('authButton').innerText = 'Register';
+  document.getElementById('switchAuth').innerHTML = `Already have an account? <a href="#" onclick="switchToLogin()">Login</a>`;
+}
+function registerStudent(){
+  const displayName = document.getElementById('displayName').value.trim();
+  const username = document.getElementById('username').value.trim();
+  const password = document.getElementById('password').value.trim();
+  if(!displayName || !username || !password){ alert('All fields required'); return; }
+  let students = JSON.parse(localStorage.getItem('students') || '{}');
+  if(document.getElementById('authButton').innerText === 'Register'){
+    if(students[username]) { alert('Username already exists'); return; }
+    students[username] = {displayName, password};
+    localStorage.setItem('students', JSON.stringify(students));
+    alert('Registration successful! Please login.');
+    switchToLogin();
+  } else {
+    if(!students[username] || students[username].password !== password){ alert('Invalid credentials'); return; }
+    currentStudent = {username, displayName: students[username].displayName};
+    showStudentDashboard();
+  }
+}
+function showStudentDashboard(){
+  document.getElementById('studentAuthPage').classList.add('hidden');
+  document.getElementById('studentDashboard').classList.remove('hidden');
+  document.getElementById('studentDisplayName').innerText = currentStudent.displayName;
+}
+
+// TEACHER AUTH
+function loginTeacher(){
+  const username = document.getElementById('teacherUsername').value.trim();
+  const password = document.getElementById('teacherPassword').value.trim();
+  if(username === 'admin' && password === 'admin123'){
+    showTeacherDashboard();
+  } else {
+    alert('Invalid teacher credentials');
+  }
+}
+function showTeacherDashboard(){
+  document.getElementById('teacherAuthPage').classList.add('hidden');
+  document.getElementById('teacherDashboard').classList.remove('hidden');
+  updateTeacherLeaderboard();
+}
+
+// START GAME
+function startGame(game){
+  currentGame = game;
+  localStorage.setItem('currentUser', currentStudent.username);
+  localStorage.setItem('currentGame', game);
+  if(game === 'board_quiz') {
+    window.open('snake_final.html', '_blank');
+  } else if(game === 'infinity') {
+    window.open('pg2.html', '_blank');
+  } else if(game === 'hangman') {
+    window.open('hangman_ani2.html', '_blank');
+  } else if(game === 'fill_the_formula') {
+    window.open('ftf333.html', '_blank');
+  } else {
+    window.open(`${game}_full.html`, '_blank');
+  }
+}
+
+// STUDENT LEADERBOARD
+function showLeaderboard(){
+  document.getElementById('studentDashboard').classList.add('hidden');
+  document.getElementById('leaderboardUser').innerText = currentStudent.displayName;
+  document.getElementById('leaderboardPage').classList.remove('hidden');
+  let leaderboard = JSON.parse(localStorage.getItem('leaderboard') || '{}');
+  let userScores = leaderboard[currentStudent.username] || {};
+  let tbody = '';
+  for(let g in userScores){
+    let s = userScores[g];
+    let badge = s >= 90 ? 'Gold' : s >= 70 ? 'Silver' : 'Bronze';
+    let badgeClass = s >= 90 ? 'gold' : s >= 70 ? 'silver' : 'bronze';
+    let suggestion = s >= 90 ? 'Excellent! Keep it up.' :
+                   s >= 70 ? 'Good! A little more practice can make it perfect.' :
+                   s >= 50 ? 'Fair. Try reviewing the key concepts.' :
+                            'Needs improvement. Focus on fundamentals.';
+    tbody += `<tr>
+      <td>${g.replace(/_/g,' ')}</td>
+      <td>${s}</td>
+      <td><span class="badge ${badgeClass}">${badge}</span></td>
+      <td>${suggestion}</td>
+    </tr>`;
+  }
+  document.getElementById('leaderboardBody').innerHTML = tbody;
+}
+function backToDashboard(){
+  document.getElementById('leaderboardPage').classList.add('hidden');
+  document.getElementById('studentDashboard').classList.remove('hidden');
+}
+
+// TEACHER LEADERBOARD
+function updateTeacherLeaderboard(){
+  let leaderboard = JSON.parse(localStorage.getItem('leaderboard') || '{}');
+  let studentsData = JSON.parse(localStorage.getItem('students') || '{}');
+  let tbody = '';
+  for(let username in leaderboard){
+    let displayName = studentsData[username] ? studentsData[username].displayName : username;
+    let games = leaderboard[username];
+    for(let game in games){
+      let score = games[game];
+      let badge = score >= 90 ? 'Gold' : score >= 70 ? 'Silver' : 'Bronze';
+      let badgeClass = score >= 90 ? 'gold' : score >= 70 ? 'silver' : 'bronze';
+      let suggestion = score >= 90 ? 'Excellent! Keep it up.' :
+                     score >= 70 ? 'Good! A little more practice can make it perfect.' :
+                     score >= 50 ? 'Fair. Try reviewing the key concepts.' :
+                                  'Needs improvement. Focus on fundamentals.';
+      tbody += `<tr>
+        <td>${displayName}</td>
+        <td>${game.replace(/_/g,' ')}</td>
+        <td>${score}</td>
+        <td><span class="badge ${badgeClass}">${badge}</span></td>
+        <td>${suggestion}</td>
+      </tr>`;
+    }
+  }
+  document.getElementById('teacherLeaderboardBody').innerHTML = tbody;
+}
+
+// LOGOUT
+function logout(){
+  currentStudent = null;
+  currentUserType = '';
+  currentGame = '';
+  document.getElementById('landingPage').classList.remove('hidden');
+  document.getElementById('studentAuthPage').classList.add('hidden');
+  document.getElementById('studentDashboard').classList.add('hidden');
+  document.getElementById('teacherAuthPage').classList.add('hidden');
+  document.getElementById('teacherDashboard').classList.add('hidden');
+  document.getElementById('leaderboardPage').classList.add('hidden');
+  document.getElementById('displayName').value = '';
+  document.getElementById('username').value = '';
+  document.getElementById('password').value = '';
+  document.getElementById('teacherUsername').value = '';
+  document.getElementById('teacherPassword').value = '';
+}
+
+// LISTEN FOR GAME SCORE UPDATES
+window.addEventListener('storage', function(e){
+  if(e.key === 'latestScore' && currentStudent){
+    const score = parseInt(e.newValue);
+    let leaderboard = JSON.parse(localStorage.getItem('leaderboard') || '{}');
+    if(!leaderboard[currentStudent.username]) leaderboard[currentStudent.username] = {};
+    leaderboard[currentStudent.username][localStorage.getItem('currentGame')] = score;
+    localStorage.setItem('leaderboard', JSON.stringify(leaderboard));
+    localStorage.removeItem('latestScore');
+    showLeaderboard();
+  }
+});
+</script>
+</body>
+</html>#   H o r i z o n  
+ 

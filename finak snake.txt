@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Snake and Ladder - Debugged Robust STEM Edition</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    margin: 15px; background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+    color: white; display: flex; flex-direction: column; align-items: center;
+  }
+  h1 { margin-bottom: 10px; }
+  #gradePanel {
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  select {
+    background: white;
+    color: #333;
+    border-radius: 6px;
+    padding: 4px 12px;
+    font-weight: bold;
+    border: none;
+    font-size: 14px;
+  }
+  #boardContainer {
+    position: relative;
+    width: 522px;
+  }
+  #board {
+    display: grid;
+    grid-template-columns: repeat(10, 50px);
+    grid-template-rows: repeat(10, 50px);
+    gap: 2px;
+    background: #def0fb;
+    border: 4px solid #fff;
+    border-radius: 10px;
+    user-select: none;
+    box-shadow: 0 0 15px rgba(0,0,0,0.3);
+  }
+  .cell {
+    background: white;
+    color: #555;
+    border: 1px solid #bbb;
+    display: flex; justify-content: center; align-items: center;
+    font-size: 12px; position: relative;
+  }
+  .ladderStart { background: #adebad; }
+  .snakeHead { background: #f5b7b1; }
+  .quizTile::after {
+    content: "❓";
+    position: absolute;
+    top: 2px; right: 4px;
+    font-size: 14px;
+    color: #0ea5a4;
+  }
+  #token {
+    width: 30px; height: 30px; background: #ff4136; border-radius: 50%;
+    position: absolute;
+    box-shadow: 0 0 8px #ff4136cc;
+    border: 2px solid white;
+    pointer-events: none;
+    z-index: 20;
+    transition: left 0.4s ease, top 0.4s ease;
+  }
+  #dice {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    background: white;
+    border-radius: 12px;
+    width: 90px; height: 90px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    padding: 14px;
+    box-shadow: 0 0 25px #2575fc;
+    cursor: pointer;
+    margin: 0;
+    z-index: 30;
+  }
+  #dice[disabled] {
+    opacity: 0.7;
+    pointer-events: none;
+  }
+  .dot {
+    width: 20px; height: 20px; background: #666; border-radius: 50%; opacity: 0;
+    justify-self: center; align-self: center;
+  }
+  .dice-1 .dot:nth-child(5),
+  .dice-2 .dot:nth-child(1), .dice-2 .dot:nth-child(9),
+  .dice-3 .dot:nth-child(1), .dice-3 .dot:nth-child(5), .dice-3 .dot:nth-child(9),
+  .dice-4 .dot:nth-child(1), .dice-4 .dot:nth-child(3), .dice-4 .dot:nth-child(7), .dice-4 .dot:nth-child(9),
+  .dice-5 .dot:nth-child(1), .dice-5 .dot:nth-child(3), .dice-5 .dot:nth-child(5), .dice-5 .dot:nth-child(7), .dice-5 .dot:nth-child(9),
+  .dice-6 .dot:nth-child(1), .dice-6 .dot:nth-child(2), .dice-6 .dot:nth-child(3), .dice-6 .dot:nth-child(7), .dice-6 .dot:nth-child(8), .dice-6 .dot:nth-child(9) {
+    opacity: 1;
+  }
+  #message {
+    margin-top: 20px;
+    font-weight: 600;
+    min-height: 1.4em;
+  }
+  #questionModal {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.75);
+    display: none; justify-content: center; align-items: center;
+    z-index: 50;
+  }
+  #questionBox {
+    background: white; padding: 24px; border-radius: 12px; max-width: 400px;
+    color: #333;
+    box-shadow: 0 0 20px rgba(0,0,0,0.25);
+  }
+  #questionBox h2 {
+    margin: 0 0 12px 0;
+  }
+  .answer-btn {
+    background: #6a11cb;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin: 6px 0;
+    width: 100%;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background 0.3s ease;
+  }
+  .answer-btn:hover {
+    background: #2575fc;
+  }
+  .correct { background: #28a745 !important; }
+  .wrong { background: #dc3545 !important; }
+</style>
+</head>
+<body>
+
+<h1>Snake & Ladder - Debugged Robust STEM Edition</h1>
+
+<div id="gradePanel">
+  <label for="gradeSelect">Choose Grade:&nbsp;</label>
+  <select id="gradeSelect">
+    <option value="" selected disabled>Select Grade</option>
+    <option value="6">6th</option>
+  </select>
+</div>
+
+<div id="boardContainer">
+  <div id="board" aria-label="Game board"></div>
+  <div id="dice" class="dice-1" title="Roll the dice" role="button" aria-pressed="false" disabled>
+    <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+    <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+    <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+  </div>
+  <div id="token" aria-label="Player token"></div>
+</div>
+
+<div id="message" role="alert" aria-live="polite"></div>
+
+<div id="questionModal" role="dialog" aria-modal="true" aria-labelledby="qText">
+  <div id="questionBox">
+    <h2 id="qText"></h2>
+    <div id="qOptions"></div>
+  </div>
+</div>
+
+<script>
+const board = document.getElementById('board');
+const boardContainer = document.getElementById('boardContainer');
+const token = document.getElementById('token');
+const dice = document.getElementById('dice');
+const message = document.getElementById('message');
+const questionModal = document.getElementById('questionModal');
+const qText = document.getElementById('qText');
+const qOptions = document.getElementById('qOptions');
+const gradeSelect = document.getElementById('gradeSelect');
+
+const ladders = {4:14, 9:31, 20:38, 28:84, 40:59, 63:81, 71:91};
+const snakes = {17:7, 54:34, 62:19, 64:60, 87:36, 93:73, 95:75, 99:78};
+const quizTiles = [3,5,7,12,15,18,21,24,27,30,33,35,38,42,45,48,50,52,55,58,60,62,65,68,70,73,75,77,80,85];
+
+let positionToIndexMap = [];
+let position = 1;
+let animating = false;
+let selectedGrade = "";
+
+const questions = {
+  "6": {
+    3: { q: "Unit of electric current?", options: ["Volt", "Ampere", "Ohm", "Watt"], answer: 1 },
+    5: { q: "What is H2O?", options: [ "Gas", "Liquid", "Solid", "Compound"], answer: 3 },
+    7: { q: "Plant leaf color pigment?", options: ["Chlorophyll", "Melanin", "Haemoglobin", "Insulin"], answer: 0 },
+    12: { q: "Which is a vertebrate?", options: ["Leech", "Earthworm", "Fish", "Snail"], answer: 2 },
+    15: { q: "Largest planet?", options: ["Earth", "Jupiter", "Mars", "Venus"], answer: 1 },
+    18: { q: "Metal liquid at room temp?", options: [ "Gold", "Mercury", "Silver", "Copper"], answer: 1 },
+    21: { q: "Shape with 3 sides?", options: [ "Triangle", "Square", "Hexagon", "Circle"], answer: 0 },
+    24: { q: "First element in periodic table?", options: [ "Hydrogen", "Oxygen", "Nitrogen", "Helium"], answer: 0 },
+    27: { q: "First planet in our system?", options: ["Venus", "Earth", "Mercury", "Mars"], answer: 2 },
+    30: { q: "Opposite of hot?", options: [ "Cold", "Warm", "Cool", "Mild"], answer: 0 },
+    33: { q: "Which is an insect?", options: ["Snake", "Dog", "Ant", "Cat"], answer: 2 },
+    35: { q: "Which is a mammal?", options: ["Frog", "Bat", "Bird", "Shark"], answer: 1 },
+    38: { q: "3 + 5 = ?", options: [ "7", "8", "9", "10"], answer: 1 },
+    42: { q: "What is 10-4?", options: ["6", "7", "8", "9"], answer: 0 },
+    45: { q: "Earth's only satellite:", options: ["Mars", "Moon", "Sun", "Venus"], answer: 1 },
+    48: { q: "How many legs has a spider?", options: ["6", "7", "8", "9"], answer: 2 },
+    50: { q: "Boiling point of water?", options: ["90°C", "100°C", "80°C", "70°C"], answer: 1 },
+    52: { q: "Tallest animal?", options: [ "Elephant", "Giraffe", "Lion", "Tiger"], answer: 1 },
+    55: { q: "Which is a fruit?", options: ["Potato", "Apple", "Carrot", "Celery"], answer: 1 },
+    58: { q: "What do bees make?", options: [ "Milk", "Honey", "Water", "Bread"], answer: 1 },
+    60: { q: "Opposite of strong?", options: ["Weak", "Tall", "Small", "Big"], answer: 0 },
+    62: { q: "Which is NOT a color?", options: ["Red", "Blue", "Dog", "Yellow"], answer: 2 },
+    65: { q: "Fish live in?", options: ["Sand", "Grass", "Water", "Sky"], answer: 2 },
+    68: { q: "Which can fly?", options: ["Cat", "Dog", "Bird", "Fish"], answer: 2 },
+    70: { q: "Who wrote gravity law?", options: ["Newton", "Einstein", "Curie", "Tesla"], answer: 0 },
+    73: { q: "Which is a planet?", options: ["Moon", "Sun", "Mars", "Polaris"], answer: 2 },
+    75: { q: "Smallest prime?", options: [ "1", "2", "3", "5"], answer: 1 },
+    77: { q: "What do plants need to live?", options: ["Rock", "Sand", "Water", "Glass"], answer: 2 },
+    80: { q: "What is 4x2?", options: [ "8", "6", "12", "10"], answer: 0 },
+    85: { q: "Which is a metal?", options: ["Iron", "Cotton", "Wool", "Silk"], answer: 0 }
+  }
+};
+
+function createBoard() {
+  board.innerHTML = '';
+  positionToIndexMap = [];
+  let leftToRight = true;
+  for(let r=9; r>=0; r--) {
+    for(let c=0; c<10; c++) {
+      let pos = r*10 + (leftToRight ? c+1 : 10-c);
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      cell.textContent = pos;
+      if(ladders[pos]) cell.classList.add('ladderStart');
+      if(snakes[pos]) cell.classList.add('snakeHead');
+      if(quizTiles.includes(pos)) cell.classList.add('quizTile');
+      board.appendChild(cell);
+      positionToIndexMap[pos] = board.children.length -1;
+    }
+    leftToRight = !leftToRight;
+  }
+}
+
+function moveTokenTo(pos) {
+  if(pos < 1) pos = 1;
+  if(pos > 100) pos = 100;
+  const idx = positionToIndexMap[pos];
+  if(typeof idx === 'undefined' || idx === null) {
+    console.error('Invalid positionToIndexMap lookup:', pos);
+    return;
+  }
+  const cell = board.children[idx];
+  if(!cell) {
+    console.error('No cell found for position:', pos, 'index:', idx);
+    return;
+  }
+  const containerRect = boardContainer.getBoundingClientRect();
+  const rect = cell.getBoundingClientRect();
+  const left = rect.left - containerRect.left + rect.width/2 - token.offsetWidth/2;
+  const top = rect.top - containerRect.top + rect.height/2 - token.offsetHeight/2;
+  token.style.left = `${left}px`;
+  token.style.top = `${top}px`;
+  position = pos;
+  console.log('Moved token to position:', pos);
+}
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function animateTokenPositions(startPos, endPos) {
+  if(startPos === endPos) return;
+  const step = (endPos > startPos) ? 1 : -1;
+  for(let i = startPos + step; (step > 0 ? i <= endPos : i >= endPos); i += step) {
+    moveTokenTo(i);
+    await sleep(300);
+  }
+}
+
+async function animateMove(steps) {
+  if(animating) return;
+  animating = true;
+  try {
+    let oldPos = position;
+    let targetPos = position + steps;
+    if(targetPos > 100) targetPos = 100;
+    console.log(`Animating move from ${oldPos} to ${targetPos}`);
+    await animateTokenPositions(oldPos, targetPos);
+    position = targetPos;
+
+    if(ladders[position]) {
+      message.textContent = `Ladder! Move up to ${ladders[position]}`;
+      await sleep(800);
+      await animateTokenPositions(position, ladders[position]);
+      position = ladders[position];
+    }
+    else if(snakes[position]) {
+      message.textContent = `Snake! Slide down to ${snakes[position]}`;
+      await sleep(800);
+      await animateTokenPositions(position, snakes[position]);
+      position = snakes[position];
+    }
+
+    if(quizTiles.includes(position)) {
+      await askQuestion(position);
+    }
+
+    if(position === 100) {
+      message.textContent = '🎉 You have won! Congratulations!';
+      dice.style.pointerEvents = 'none';
+    } else {
+      message.textContent = 'Roll the dice!';
+      dice.style.pointerEvents = 'auto';
+    }
+  } catch(e) {
+    console.error('Error in animateMove:', e);
+    message.textContent = 'Error occurred! You can roll again.';
+    dice.style.pointerEvents = 'auto';
+  } finally {
+    animating = false;
+  }
+}
+
+async function askQuestion(pos) {
+  if(!selectedGrade) return;
+  const quizSet = questions[selectedGrade];
+  const q = quizSet && quizSet[pos];
+  if(!q) {
+    console.warn('Missing question for position', pos);
+    return;
+  }
+  return new Promise((resolve) => {
+    qText.textContent = q.q;
+    qOptions.innerHTML = '';
+    q.options.forEach((opt, idx) => {
+      const btn = document.createElement('button');
+      btn.className = 'answer-btn';
+      btn.textContent = opt;
+      btn.onclick = () => {
+        Array.from(qOptions.children).forEach(b => b.disabled = true);
+        if(idx === q.answer){
+          btn.classList.add('correct');
+          message.textContent = 'Correct! Advance 1 step.';
+          animateTokenPositions(position, Math.min(position+1, 100)).then(() => {
+            position = Math.min(position+1, 100);
+            updateAfterQuestion();
+          });
+        } else {
+          btn.classList.add('wrong');
+          message.textContent = 'Wrong! Move back 1 step.';
+          animateTokenPositions(position, Math.max(position-1, 1)).then(() => {
+            position = Math.max(position-1, 1);
+            updateAfterQuestion();
+          });
+        }
+        setTimeout(() => {
+          questionModal.style.display = 'none';
+          resolve();
+        }, 1500);
+      };
+      qOptions.appendChild(btn);
+    });
+    questionModal.style.display = 'flex';
+    dice.style.pointerEvents = 'none';
+  });
+}
+
+function updateAfterQuestion() {
+  message.textContent = 'Roll the dice!';
+  dice.style.pointerEvents = 'auto';
+}
+
+async function rollDice() {
+  if(animating) return;
+  if(position === 100){
+    message.textContent = 'Game complete. Refresh to play again.';
+    dice.style.pointerEvents = 'none';
+    return;
+  }
+  dice.style.pointerEvents = 'none';
+  message.textContent = 'Rolling...';
+  for(let i=0; i<12; i++) {
+    const val = Math.floor(Math.random()*6) + 1;
+    dice.className = 'dice-' + val;
+    await sleep(70);
+  }
+  const roll = Math.floor(Math.random()*6) + 1;
+  dice.className = 'dice-' + roll;
+  message.textContent = `You rolled ${roll}`;
+  await sleep(350);
+  await animateMove(roll);
+}
+
+dice.addEventListener('click', rollDice);
+
+gradeSelect.addEventListener('change', () => {
+  selectedGrade = gradeSelect.value;
+  position = 1;
+  animating = false;
+  createBoard();
+  moveTokenTo(position);
+  dice.removeAttribute('disabled');
+  message.textContent = 'Click dice to roll!';
+});
+
+(function init(){
+  createBoard();
+  moveTokenTo(position);
+  message.textContent = 'Select a grade above to start!';
+  dice.setAttribute('disabled', 'true');
+})();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Hangman Game - STEM Edition with Start, End, Leaderboard & Badges</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    max-width: 540px;
+    margin: 20px auto;
+    text-align: center;
+    background: #f5f8fa;
+    color: #333;
+  }
+  select, button {
+    font-size: 1em;
+    padding: 6px 12px;
+    margin: 6px 8px;
+    border-radius: 5px;
+    border: 1px solid #888;
+    cursor: pointer;
+  }
+  #wordDisplay {
+    font-size: 2em;
+    letter-spacing: 0.3em;
+    margin: 20px 0;
+  }
+  #letters {
+    margin: 20px 0;
+  }
+  .letter-btn {
+    font-size: 1.2em;
+    margin: 5px;
+    padding: 8px 14px;
+    cursor: pointer;
+    border: 1px solid #555;
+    border-radius: 4px;
+    background: #fff;
+    transition: background-color 0.3s ease;
+  }
+  .letter-btn:hover:not(:disabled) {
+    background-color: #cce5ff;
+    transform: scale(1.1);
+    transition: transform 0.2s ease, background-color 0.3s ease;
+  }
+  .letter-btn:disabled {
+    cursor: default;
+    background: #bbb;
+    border-color: #999;
+  }
+  .letter-btn.correct {
+    background-color: #28a745;
+    color: white;
+    border-color: #1e7e34;
+    transform: scale(1.2);
+    transition: transform 0.3s ease, background-color 0.3s ease;
+  }
+  .letter-btn.wrong {
+    background-color: #dc3545;
+    color: white;
+    border-color: #a71d2a;
+    transform: scale(1.2);
+    transition: transform 0.3s ease, background-color 0.3s ease;
+  }
+  #message {
+    font-size: 1.3em;
+    margin: 15px 0;
+    height: 1.5em;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+  }
+  #message.show {
+    opacity: 1;
+  }
+  #hint {
+    font-style: italic;
+    margin: 10px 0;
+    color: #555;
+    min-height: 1.2em;
+    opacity: 0;
+    transition: opacity 1s ease;
+  }
+  #hint.show {
+    opacity: 1;
+  }
+  #hangmanDrawing {
+    margin: 20px auto;
+    width: 180px;
+    height: 240px;
+    border-left: 6px solid #333;
+    border-top: 6px solid #333;
+    position: relative;
+  }
+  .hangman-part {
+    position: absolute;
+    background: #333;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+  }
+  .hangman-part.show {
+    opacity: 1;
+    animation: fadeIn 0.5s forwards;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  #head {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 6px solid #333;
+    top: 40px;
+    left: 70px;
+    background: transparent;
+  }
+  #body {
+    width: 6px;
+    height: 70px;
+    top: 80px;
+    left: 88px;
+  }
+  #leftArm {
+    width: 50px;
+    height: 6px;
+    top: 100px;
+    left: 38px;
+    transform-origin: right center;
+    transform: rotate(45deg);
+  }
+  #rightArm {
+    width: 50px;
+    height: 6px;
+    top: 100px;
+    left: 88px;
+    transform-origin: left center;
+    transform: rotate(-45deg);
+  }
+  #leftLeg {
+    width: 50px;
+    height: 6px;
+    top: 150px;
+    left: 38px;
+    transform-origin: right center;
+    transform: rotate(-45deg);
+  }
+  #rightLeg {
+    width: 50px;
+    height: 6px;
+    top: 150px;
+    left: 88px;
+    transform-origin: left center;
+    transform: rotate(45deg);
+  }
+  #resetBtn, #startBtn, #endBtn, #nextBtn, #leaderboardBtn {
+    margin: 10px 6px;
+    padding: 10px 20px;
+    font-size: 1.1em;
+    cursor: pointer;
+    border-radius: 6px;
+    border: none;
+    background: #28a745;
+    color: white;
+  }
+  #endBtn {
+    background: #dc3545;
+  }
+  #leaderboard {
+    text-align: left;
+    margin: 15px auto;
+    max-width: 400px;
+    background: #fff;
+    border: 1px solid #ddd;
+    padding: 15px;
+    border-radius: 8px;
+  }
+  #badgeDisplay {
+    margin-top: 20px;
+  }
+  .badge {
+    display: inline-block;
+    background: #ffd700;
+    border-radius: 50%;
+    padding: 12px 16px;
+    margin: 5px;
+    font-weight: bold;
+    color: #444;
+    box-shadow: 0 0 10px #ffc;
+    opacity: 0;
+    transform: scale(0);
+    animation: badgePop 0.6s forwards;
+  }
+  @keyframes badgePop {
+    to { opacity: 1; transform: scale(1); }
+  }
+  #gameContainer {
+    display: none;
+  }
+
+  /* Selection container styling */
+  #selectionContainer {
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .selection-group {
+    opacity: 0;
+    margin: 10px 0;
+    transition: opacity 0.6s ease;
+    display: flex;
+    align-items: center;
+  }
+  label {
+    margin-right: 10px;
+    font-weight: bold;
+  }
+  /* Colorful labels */
+  label[for="gradeSelect"] {
+    color: #ff5722; /* Orange */
+  }
+  label[for="difficultySelect"] {
+    color: #3f51b5; /* Indigo */
+  }
+  label[for="subjectSelect"] {
+    color: #009688; /* Teal */
+  }
+  select {
+    font-size: 1em;
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: none;
+    color: white;
+    cursor: pointer;
+  }
+  #gradeSelect {
+    background: linear-gradient(45deg, #ff7043, #ff5722);
+  }
+  #difficultySelect {
+    background: linear-gradient(45deg, #5c6bc0, #3f51b5);
+  }
+  #subjectSelect {
+    background: linear-gradient(45deg, #26a69a, #009688);
+  }
+  /* Show class for fade in */
+  .show-selection {
+    opacity: 1 !important;
+  }
+</style>
+</head>
+<body>
+
+<h1>Hangman Game - STEM Edition</h1>
+
+<div id="selectionContainer">
+  <div class="selection-group" id="gradeGroup">
+    <label for="gradeSelect">Grade: </label>
+    <select id="gradeSelect">
+      <option value="6">6</option>
+      <option value="7">7</option>
+      <option value="8">8</option>
+      <option value="9">9</option>
+      <option value="10">10</option>
+      <option value="11">11</option>
+      <option value="12">12</option>
+    </select>
+  </div>
+  <div class="selection-group" id="difficultyGroup">
+    <label for="difficultySelect">Difficulty: </label>
+    <select id="difficultySelect">
+      <option value="easy">Easy</option>
+      <option value="medium" selected>Medium</option>
+      <option value="hard">Hard</option>
+    </select>
+  </div>
+  <div class="selection-group" id="subjectGroup">
+    <label for="subjectSelect">Subject: </label>
+    <select id="subjectSelect">
+      <option value="math">Math</option>
+      <option value="biology">Biology</option>
+      <option value="chemistry">Chemistry</option>
+      <option value="physics">Physics</option>
+      <option value="computer">Computer Science</option>
+    </select>
+  </div>
+  <button id="startBtn">Start Game</button>
+</div>
+
+<div id="gameContainer">
+  <div id="wordDisplay"></div>
+  <div id="hint"></div>
+  <div id="letters"></div>
+  <div id="message"></div>
+  <div id="hangmanDrawing">
+    <div id="head" class="hangman-part"></div>
+    <div id="body" class="hangman-part"></div>
+    <div id="leftArm" class="hangman-part"></div>
+    <div id="rightArm" class="hangman-part"></div>
+    <div id="leftLeg" class="hangman-part"></div>
+    <div id="rightLeg" class="hangman-part"></div>
+  </div>
+  <button id="nextBtn" style="display:none;">Next Word</button>
+  <button id="endBtn">End Game</button>
+</div>
+
+<h2>Leaderboard</h2>
+<div id="leaderboard">
+  No games played yet.
+</div>
+
+<h2>Badges Earned</h2>
+<div id="badgeDisplay">
+  None yet.
+</div>
+
+<script>
+  const wordsData = {
+    6: {
+      easy: [
+        { word: "data", hint: "Information collected for analysis" },
+        { word: "atom", hint: "Basic unit of a chemical element" },
+        { word: "cell", hint: "Basic building block of living organisms" }
+      ],
+      medium: [
+        { word: "algorithm", hint: "Step-by-step procedure for calculations" },
+        { word: "molecule", hint: "Smallest unit of a chemical compound" },
+        { word: "velocity", hint: "Speed with direction" }
+      ],
+      hard: [
+        { word: "photosynthesis", hint: "Process plants use to make food from sunlight" },
+        { word: "oxidation", hint: "Loss of electrons during a reaction" },
+        { word: "inertia", hint: "Resistance of an object to change its motion" }
+      ],
+    },
+    math: {
+      easy: [
+        { word: "angle", hint: "Measure of turn between two lines" },
+        { word: "square", hint: "A polygon with four equal sides" },
+        { word: "ratio", hint: "Relationship between two quantities" }
+      ],
+      medium: [
+        { word: "calculus", hint: "Mathematical study of change" },
+        { word: "geometry", hint: "Mathematics of shapes and spaces" },
+        { word: "algebra", hint: "Branch of mathematics dealing with symbols" }
+      ],
+      hard: [
+        { word: "trigonometry", hint: "Study of triangles and their angles" },
+        { word: "differential", hint: "Type of calculus involving rates of change" },
+        { word: "integral", hint: "Calculus concept related to area under curves" }
+      ],
+    },
+    biology: {
+      easy: [
+        { word: "plant", hint: "Organism that makes its own food" },
+        { word: "fruit", hint: "Edible part of a plant containing seeds" },
+        { word: "blood", hint: "Fluid that circulates in the body" }
+      ],
+      medium: [
+        { word: "neuron", hint: "Nerve cell transmitting signals" },
+        { word: "enzyme", hint: "Protein that speeds up chemical reactions" },
+        { word: "protein", hint: "Macromolecule essential to cells" }
+      ],
+      hard: [
+        { word: "chlorophyll", hint: "Green pigment in plants" },
+        { word: "photosynthesis", hint: "Process plants use sunlight for food" },
+        { word: "respiration", hint: "Process to release energy from food" }
+      ],
+    },
+    chemistry: {
+      easy: [
+        { word: "acid", hint: "Substance with pH less than 7" },
+        { word: "base", hint: "Substance that neutralizes acids" },
+        { word: "salt", hint: "Product of acid-base reaction" }
+      ],
+      medium: [
+        { word: "atom", hint: "Smallest unit of matter" },
+        { word: "molecule", hint: "Group of atoms bonded together" },
+        { word: "ligand", hint: "Molecule that binds to another" }
+      ],
+      hard: [
+        { word: "oxidation", hint: "Loss of electrons during a reaction" },
+        { word: "isomer", hint: "Compounds with same formula but different structure" },
+        { word: "catalyst", hint: "Speeds up a chemical reaction" }
+      ],
+    },
+    physics: {
+      easy: [
+        { word: "force", hint: "Push or pull on an object" },
+        { word: "mass", hint: "Amount of matter in an object" },
+        { word: "light", hint: "Visible form of energy" }
+      ],
+      medium: [
+        { word: "kinetic", hint: "Relating to motion" },
+        { word: "energy", hint: "Capacity to do work" },
+        { word: "power", hint: "Rate of doing work" }
+      ],
+      hard: [
+        { word: "quantum", hint: "Discrete quantity of energy" },
+        { word: "inertia", hint: "Resistance of an object to change its motion" },
+        { word: "frequency", hint: "The number of cycles per second" }
+      ],
+    },
+    computer: {
+      easy: [
+        { word: "code", hint: "Instructions written for computers" },
+        { word: "file", hint: "Stored data on a computer" },
+        { word: "mouse", hint: "Computer input device" }
+      ],
+      medium: [
+        { word: "syntax", hint: "Rules for arranging words in programming" },
+        { word: "algorithm", hint: "Step-by-step procedure for calculations" },
+        { word: "debug", hint: "Process of finding and fixing errors" }
+      ],
+      hard: [
+        { word: "compiler", hint: "Translates code to machine language" },
+        { word: "encryption", hint: "Process of encoding information" },
+        { word: "variable", hint: "Symbol to store data value" }
+      ],
+    }
+  };
+
+  const maxWrongGuesses = 6;
+  let selected = null;
+  let guessedLetters = [];
+  let wrongGuesses = 0;
+  let questionIndex = 0;
+  let currentQuestions = [];
+  let score = 0;
+  let gamesPlayed = 0;
+  let badges = new Set();
+
+  const wordDisplay = document.getElementById("wordDisplay");
+  const hintDisplay = document.getElementById("hint");
+  const lettersDiv = document.getElementById("letters");
+  const messageDiv = document.getElementById("message");
+  const hangmanParts = [
+    document.getElementById("head"),
+    document.getElementById("body"),
+    document.getElementById("leftArm"),
+    document.getElementById("rightArm"),
+    document.getElementById("leftLeg"),
+    document.getElementById("rightLeg")
+  ];
+
+  const gradeSelect = document.getElementById("gradeSelect");
+  const difficultySelect = document.getElementById("difficultySelect");
+  const subjectSelect = document.getElementById("subjectSelect");
+
+  const selectionContainer = document.getElementById("selectionContainer");
+  const gameContainer = document.getElementById("gameContainer");
+  const leaderboardDiv = document.getElementById("leaderboard");
+  const badgeDisplay = document.getElementById("badgeDisplay");
+
+  const startBtn = document.getElementById("startBtn");
+  const nextBtn = document.getElementById("nextBtn");
+  const endBtn = document.getElementById("endBtn");
+
+  startBtn.addEventListener("click", () => {
+    questionsSetup();
+    selectionContainer.style.display = "none";
+    gameContainer.style.display = "block";
+    animateMessage("");
+    score = 0;
+    questionIndex = 0;
+    badges.clear();
+    showNextWord();
+  });
+
+  nextBtn.addEventListener("click", () => {
+    questionIndex++;
+    if(questionIndex < currentQuestions.length) {
+      showNextWord();
+    } else {
+      endGame();
+    }
+  });
+
+  endBtn.addEventListener("click", () => {
+    endGame();
+    setTimeout(() => {
+      // Redirect to the login.html page (make sure this path is correct for your setup)
+      window.location.href = "final_HORIZON.html";
+    }, 1500); // delay for message display
+  });
+
+  function questionsSetup() {
+    const difficulty = difficultySelect.value;
+    const subject = subjectSelect.value.toLowerCase();
+    const subjectCategory = wordsData[subject] || wordsData.general;
+    const wordList = subjectCategory[difficulty] || subjectCategory.easy;
+
+    // Shuffle and take minimum 5 words or available count
+    currentQuestions = shuffleArray(wordList).slice(0, 5);
+  }
+
+  function showNextWord() {
+    guessedLetters = [];
+    wrongGuesses = 0;
+    hangmanParts.forEach(part => {
+      part.style.display = "none";
+      part.classList.remove("show");
+    });
+    animateMessage("");
+    nextBtn.style.display = "none";
+
+    selected = currentQuestions[questionIndex];
+    hintDisplay.textContent = "Hint: " + selected.hint;
+    animateHint();
+    createLetterButtons();
+    updateWordDisplay();
+  }
+
+  function createLetterButtons() {
+    lettersDiv.innerHTML = "";
+    for (let i = 65; i <= 90; i++) {
+      let btn = document.createElement("button");
+      btn.textContent = String.fromCharCode(i);
+      btn.className = "letter-btn";
+      btn.onclick = () => guessLetter(btn.textContent.toLowerCase(), btn);
+      lettersDiv.appendChild(btn);
+    }
+  }
+
+  function guessLetter(letter, btn) {
+    btn.disabled = true;
+    guessedLetters.push(letter);
+
+    if (selected.word.includes(letter)) {
+      btn.classList.add('correct');
+      updateWordDisplay();
+      checkWin();
+    } else {
+      btn.classList.add('wrong');
+      wrongGuesses++;
+      updateHangman();
+      if (wrongGuesses >= maxWrongGuesses) {
+        endCurrentWord(false);
+      }
+    }
+  }
+
+  function updateWordDisplay() {
+    let display = "";
+    for (let char of selected.word) {
+      if (guessedLetters.includes(char)) {
+        display += char.toUpperCase() + " ";
+      } else {
+        display += "_ ";
+      }
+    }
+    wordDisplay.textContent = display.trim();
+  }
+
+  function updateHangman() {
+    if (wrongGuesses > 0 && wrongGuesses <= maxWrongGuesses) {
+      animateHangmanPart(wrongGuesses - 1);
+    }
+  }
+
+  function checkWin() {
+    let won = selected.word.split("").every(letter => guessedLetters.includes(letter));
+    if (won) {
+      endCurrentWord(true);
+    }
+  }
+
+  function endCurrentWord(won) {
+    lettersDiv.querySelectorAll("button").forEach(btn => btn.disabled = true);
+    if (won) {
+      animateMessage("Correct! Well done!");
+      score += 10;
+      checkBadges();
+    } else {
+      animateMessage(`Oops! The word was: ${selected.word.toUpperCase()}`);
+    }
+    nextBtn.style.display = questionIndex < currentQuestions.length - 1 ? "inline-block" : "none";
+  }
+
+  function endGame() {
+    lettersDiv.innerHTML = "";
+    nextBtn.style.display = "none";
+    animateMessage(`Game Over! Score: ${score}`);
+    updateLeaderboard(score);
+    showBadges();
+    gameContainer.style.display = "none";
+    selectionContainer.style.display = "block";
+  }
+
+  function updateLeaderboard(newScore) {
+    gamesPlayed++;
+    // Save in localStorage
+    let leaderboard = JSON.parse(localStorage.getItem("hangmanLeaderboard") || "[]");
+    leaderboard.push({ score: newScore, date: new Date().toLocaleString() });
+    leaderboard.sort((a,b) => b.score - a.score);
+    if(leaderboard.length > 10) leaderboard.length = 10; // Keep top 10
+    localStorage.setItem("hangmanLeaderboard", JSON.stringify(leaderboard));
+    displayLeaderboard(leaderboard);
+  }
+
+  function displayLeaderboard(data) {
+    if(data.length === 0) {
+      leaderboardDiv.textContent = "No games played yet.";
+      return;
+    }
+    let html = "<ol>";
+    data.forEach(entry => {
+      html += `<li>Score: ${entry.score} - ${entry.date}</li>`;
+    });
+    html += "</ol>";
+    leaderboardDiv.innerHTML = html;
+  }
+
+  function checkBadges() {
+    // Example badges based on score milestones
+    if(score >= 50) badges.add("🏅 Scored 50+");
+    if(score >= 80) badges.add("🎖️ Scored 80+");
+    if(score === currentQuestions.length * 10) badges.add("🏆 Perfect Score");
+  }
+
+  function showBadges() {
+    if(badges.size === 0) {
+      badgeDisplay.textContent = "None yet.";
+      return;
+    }
+    badgeDisplay.innerHTML = "";
+    badges.forEach(badge => {
+      const span = document.createElement("span");
+      span.className = "badge";
+      span.title = badge;
+      span.textContent = badge.split(" ")[0]; // Show emoji only
+      badgeDisplay.appendChild(span);
+      // Trigger animation
+      span.style.animationDelay = "0.3s";
+    });
+  }
+
+  // Animation helper functions
+  function animateMessage(text) {
+    messageDiv.textContent = text;
+    messageDiv.classList.remove("show");
+    void messageDiv.offsetWidth; // Trigger reflow for restart animation
+    messageDiv.classList.add("show");
+  }
+
+  function animateHint() {
+    hintDisplay.classList.remove("show");
+    void hintDisplay.offsetWidth;
+    hintDisplay.classList.add("show");
+  }
+
+  function animateHangmanPart(index) {
+    if(index >= 0 && index < hangmanParts.length) {
+      const part = hangmanParts[index];
+      part.style.display = "block";
+      part.classList.remove("show");
+      void part.offsetWidth;
+      part.classList.add("show");
+    }
+  }
+
+  // Utility shuffle function
+  function shuffleArray(arr) {
+    let array = arr.slice();
+    for(let i = array.length - 1; i > 0; i--){
+      const j = Math.floor(Math.random() * (i + 1));
+      [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+  }
+
+  // Animate selection groups one by one on page load
+  window.addEventListener('DOMContentLoaded', () => {
+    const groups = [
+      document.getElementById('gradeGroup'),
+      document.getElementById('difficultyGroup'),
+      document.getElementById('subjectGroup')
+    ];
+    groups.forEach((group, index) => {
+      setTimeout(() => {
+        group.classList.add('show-selection');
+      }, index * 500); // 0ms, 500ms, 1000ms delay sequentially
+    });
+    let leaderboard = JSON.parse(localStorage.getItem("hangmanLeaderboard") || "[]");
+    displayLeaderboard(leaderboard);
+  });
+</script>
+
+</body>
+</html>
